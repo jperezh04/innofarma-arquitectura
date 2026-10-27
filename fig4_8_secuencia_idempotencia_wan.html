@@ -1,0 +1,265 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Fig 4.8 - Idempotencia WAN (ILA-0008) | Innofarma</title>
+  <script src="https://cdn.jsdelivr.net/npm/mermaid@10/dist/mermaid.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/svg-pan-zoom@3.6.1/dist/svg-pan-zoom.min.js"></script>
+  <style>
+    *, *::before, *::after {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+
+    html, body {
+      width: 100vw;
+      height: 100vh;
+      overflow: hidden;
+      background-color: #f8fafc;
+      color: #0f172a;
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+      user-select: none;
+      -webkit-user-select: none;
+    }
+
+    /* BARRA DE CONTROL FLOTANTE (ESTILO MARIFARMA SALUD) */
+    .hud-bar {
+      position: fixed;
+      top: 12px;
+      right: 16px;
+      z-index: 2000;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      background: #ffffff;
+      border: 1.5px solid #0d9488;
+      border-radius: 10px;
+      padding: 6px 14px;
+      font-size: 11.5px;
+      box-shadow: 0 4px 12px rgba(13, 148, 136, 0.12);
+    }
+
+    .hud-status-badge {
+      background: #0d9488;
+      color: #ffffff;
+      font-size: 10px;
+      font-weight: 700;
+      letter-spacing: 0.5px;
+      padding: 4px 8px;
+      border-radius: 6px;
+      text-transform: uppercase;
+      white-space: nowrap;
+    }
+
+    .hud-controls {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+
+    .btn-hud {
+      background: #ffffff;
+      color: #0f766e;
+      border: 1.5px solid #0d9488;
+      border-radius: 6px;
+      padding: 5px 10px;
+      font-family: inherit;
+      font-size: 11px;
+      font-weight: 700;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      gap: 4px;
+      transition: all 0.15s ease;
+      white-space: nowrap;
+    }
+
+    .btn-hud:hover {
+      background: #0d9488;
+      color: #ffffff;
+    }
+
+    .zoom-text {
+      font-weight: 700;
+      min-width: 44px;
+      text-align: center;
+      font-size: 11.5px;
+      color: #0f766e;
+    }
+
+    .hud-hint {
+      font-size: 10.5px;
+      color: #64748b;
+      margin-right: 6px;
+    }
+
+    #container {
+      width: 100vw;
+      height: 100vh;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      cursor: grab;
+      background: radial-gradient(#ccfbf1 1px, transparent 1px);
+      background-size: 24px 24px;
+      background-color: #f8fafc;
+    }
+
+    #container:active {
+      cursor: grabbing;
+    }
+
+    #mermaid-target {
+      width: 100%;
+      height: 100%;
+    }
+
+    #mermaid-target svg {
+      width: 100%;
+      height: 100%;
+    }
+  </style>
+</head>
+<body>
+
+  <header class="hud-bar">
+    <span class="hud-status-badge">ILA-0008: IDEMPOTENCIA WAN</span>
+    <span class="hud-hint">Pan: Arrastrar | Zoom: Rueda</span>
+    <div class="hud-controls">
+      <button class="btn-hud" id="btnZoomOut">− Zoom</button>
+      <span class="zoom-text" id="zoomText">100%</span>
+      <button class="btn-hud" id="btnZoomIn">+ Zoom</button>
+      <button class="btn-hud" id="btnFit">Ajustar</button>
+      <button class="btn-hud" id="btnReset">Reset</button>
+      <button class="btn-hud" id="btnCopy">Copiar Código</button>
+    </div>
+  </header>
+
+  <div id="container">
+    <div id="mermaid-target"></div>
+  </div>
+
+  <script>
+    const mermaidCode = `sequenceDiagram
+    autonumber
+    actor Cajero as Cajero / POS (Local 2 PWA)
+    participant VPN as WireGuard Tunnel (UDP 51820)
+    participant Controller as VentaController (Laravel 11)
+    participant DB as PostgreSQL 16 (Local 1)
+
+    Note over Cajero,DB: FASE 1: Primer Intento de Venta con Generación de UUID v4
+    Cajero->>Cajero: Genera UUID v4 de Transacción ('uuid-9a8b-4c3d...')
+    Cajero->>VPN: POST /api/v1/ventas (Payload JSON + UUID v4 + Token Bearer)
+    VPN->>Controller: Enruta petición cifrada hacia PC 1 Servidor
+    Controller->>DB: BEGIN TRANSACTION (Nivel READ COMMITTED)
+    Controller->>DB: SELECT id_venta FROM ventas WHERE uuid = 'uuid-9a8b-4c3d...'
+    DB-->>Controller: NULL (Transacción nueva, no procesada previamente)
+    Controller->>DB: Descuenta stock lotes FEFO y registra venta ID 8492
+    Controller->>DB: COMMIT ACID (Transacción guardada exitosamente en SSD NVMe)
+
+    Note over VPN,Cajero: FASE 2: Microcorte WAN en la Respuesta HTTP (Falla de Red)
+    Controller-->>VPN: HTTP 201 Created {venta_id: 8492, ticket_raw}
+    VPN--x Cajero: CABLE DESCONECTADO / TIMEOUT WAN (Respuesta perdida)
+    Note over Cajero: El navegador detecta ERR_CONNECTION_TIMED_OUT.<br/>El cliente NO sabe si la venta se cobró o no.
+
+    Note over Cajero,DB: FASE 3: Reintento Automático / Manual con Mismo UUID v4 (ILA-0008)
+    Cajero->>Cajero: Sistema POS reintenta con el MISMO UUID ('uuid-9a8b-4c3d...')
+    Cajero->>VPN: POST /api/v1/ventas (Mismo Payload + MISMO UUID v4)
+    VPN->>Controller: Reenvía petición tras reconexión WAN
+    Controller->>DB: SELECT id_venta, estado, total, comprobante FROM ventas WHERE uuid = 'uuid-9a8b-4c3d...'
+    DB-->>Controller: Venta EXISTENTE encontrada (ID: 8492, estado='CONFIRMADA')
+    
+    Note over Controller,Cajero: FASE 4: Respuesta Idempotente (Sin Efectos Secundarios)
+    Note right of DB: IDEMPOTENCIA GARANTIZADA:<br/>1. NO se vuelve a descontar stock.<br/>2. NO se genera cobro duplicado en caja.<br/>3. Se retorna el comprobante original.
+    Controller-->>VPN: HTTP 200 OK {status: "ALREADY_PROCESSED", venta_id: 8492, ticket_raw}
+    VPN-->>Cajero: Entrega respuesta con comprobante generado
+    Cajero->>Cajero: Imprime boleta térmica original en Ticketera (Fin de Venta)`;
+
+    mermaid.initialize({
+      startOnLoad: false,
+      theme: 'base',
+      themeVariables: {
+        fontFamily: 'Segoe UI, Arial, sans-serif',
+        fontSize: '13px',
+        primaryColor: '#ccfbf1',
+        primaryTextColor: '#0f172a',
+        primaryBorderColor: '#0d9488',
+        lineColor: '#0f766e',
+        secondaryColor: '#ecfdf5',
+        tertiaryColor: '#f0fdfa',
+        noteBkgColor: '#f0fdfa',
+        noteTextColor: '#0f766e',
+        noteBorderColor: '#14b8a6',
+        actorBkg: '#0d9488',
+        actorTextColor: '#ffffff',
+        actorBorder: '#0f766e',
+        actorLineColor: '#0d9488',
+        signalColor: '#0f766e',
+        signalTextColor: '#0f172a',
+        labelBoxBkgColor: '#ccfbf1',
+        labelBoxBorderColor: '#0d9488',
+        labelTextColor: '#0f766e'
+      }
+    });
+
+    let panZoomInstance = null;
+
+    async function renderDiagram() {
+      const target = document.getElementById('mermaid-target');
+      const { svg } = await mermaid.render('mermaid-svg-48', mermaidCode);
+      target.innerHTML = svg;
+
+      const svgElement = target.querySelector('svg');
+      svgElement.style.maxWidth = 'none';
+      panZoomInstance = svgPanZoom(svgElement, {
+        zoomEnabled: true,
+        controlIconsEnabled: false,
+        fit: true,
+        center: true,
+        minZoom: 0.3,
+        maxZoom: 5.0,
+        onZoom: function(newScale) {
+          document.getElementById('zoomText').textContent = `${Math.round(newScale * 100)}%`;
+        }
+      });
+
+      document.getElementById('btnZoomIn').addEventListener('click', () => panZoomInstance.zoomIn());
+      document.getElementById('btnZoomOut').addEventListener('click', () => panZoomInstance.zoomOut());
+      document.getElementById('btnFit').addEventListener('click', () => {
+        panZoomInstance.resize();
+        panZoomInstance.fit();
+        panZoomInstance.center();
+      });
+      document.getElementById('btnReset').addEventListener('click', () => {
+        panZoomInstance.reset();
+        panZoomInstance.fit();
+        panZoomInstance.center();
+      });
+
+      document.getElementById('btnCopy').addEventListener('click', () => {
+        navigator.clipboard.writeText(mermaidCode);
+        const btn = document.getElementById('btnCopy');
+        const orig = btn.textContent;
+        btn.textContent = '✓ Copiado';
+        setTimeout(() => btn.textContent = orig, 1500);
+      });
+    }
+
+    window.addEventListener('load', renderDiagram);
+    window.addEventListener('resize', () => {
+      if (panZoomInstance) {
+        panZoomInstance.resize();
+        panZoomInstance.fit();
+        panZoomInstance.center();
+      }
+    });
+    window.addEventListener('keydown', (e) => {
+      if ((e.key === 'm' || e.key === 'M') && window.parent && window.parent !== window && typeof window.parent.toggleSidebar === 'function') {
+        window.parent.toggleSidebar();
+      }
+    });
+  </script>
+</body>
+</html>

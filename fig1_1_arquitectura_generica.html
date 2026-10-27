@@ -1,0 +1,292 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Fig 1.1 - Arquitectura Genérica | Innofarma</title>
+  <script src="https://cdn.jsdelivr.net/npm/mermaid@10/dist/mermaid.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/svg-pan-zoom@3.6.1/dist/svg-pan-zoom.min.js"></script>
+  <style>
+    *, *::before, *::after {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+
+    html, body {
+      width: 100vw;
+      height: 100vh;
+      overflow: hidden;
+      background-color: #f8fafc;
+      color: #0f172a;
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+      user-select: none;
+      -webkit-user-select: none;
+    }
+
+    /* BARRA DE CONTROL FLOTANTE (ESTILO MARIFARMA SALUD) */
+    .hud-bar {
+      position: fixed;
+      top: 12px;
+      right: 16px;
+      z-index: 2000;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      background: #ffffff;
+      border: 1.5px solid #0d9488;
+      border-radius: 10px;
+      padding: 6px 14px;
+      font-size: 11.5px;
+      box-shadow: 0 4px 12px rgba(13, 148, 136, 0.12);
+    }
+
+    .hud-status-badge {
+      background: #0d9488;
+      color: #ffffff;
+      font-size: 10px;
+      font-weight: 700;
+      letter-spacing: 0.5px;
+      padding: 4px 8px;
+      border-radius: 6px;
+      text-transform: uppercase;
+      white-space: nowrap;
+    }
+
+    .hud-controls {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+
+    .btn-hud {
+      background: #ffffff;
+      color: #0f766e;
+      border: 1.5px solid #0d9488;
+      border-radius: 6px;
+      padding: 5px 10px;
+      font-family: inherit;
+      font-size: 11px;
+      font-weight: 700;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      gap: 4px;
+      transition: all 0.15s ease;
+      white-space: nowrap;
+    }
+
+    .btn-hud:hover {
+      background: #0d9488;
+      color: #ffffff;
+    }
+
+    .zoom-text {
+      font-weight: 700;
+      min-width: 44px;
+      text-align: center;
+      font-size: 11.5px;
+      color: #0f766e;
+    }
+
+    .hud-hint {
+      font-size: 10.5px;
+      color: #64748b;
+      margin-right: 6px;
+      white-space: nowrap;
+    }
+
+    #container {
+      width: 100vw;
+      height: 100vh;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      background: radial-gradient(#ccfbf1 1px, transparent 1px);
+      background-size: 24px 24px;
+      background-color: #f8fafc;
+      cursor: grab;
+    }
+
+    #container:active {
+      cursor: grabbing;
+    }
+
+    #mermaid-target {
+      width: 100%;
+      height: 100%;
+    }
+
+    #mermaid-target svg {
+      width: 100% !important;
+      height: 100% !important;
+    }
+  </style>
+</head>
+<body>
+
+  <header class="hud-bar">
+    <span class="hud-status-badge">ARQUITECTURA GENÉRICA</span>
+    <span class="hud-hint">Arrastrar: Pan | Rueda: Zoom</span>
+    <div class="hud-controls">
+      <button class="btn-hud" id="btnZoomOut">− Zoom</button>
+      <span class="zoom-text" id="zoomText">100%</span>
+      <button class="btn-hud" id="btnZoomIn">+ Zoom</button>
+      <button class="btn-hud" id="btnFit">Ajustar</button>
+      <button class="btn-hud" id="btnReset">Reset</button>
+      <button class="btn-hud" id="btnCopy">Copiar Código</button>
+    </div>
+  </header>
+
+  <div id="container">
+    <div id="mermaid-target"></div>
+  </div>
+
+  <script>
+    const mermaidCode = `flowchart TB
+    %% ==========================================
+    %% ARQUITECTURA GENÉRICA EN 5 CAPAS — INNOFARMA
+    %% ==========================================
+
+    subgraph C1 ["CAPA 1: CLIENTES Y PRESENTACIÓN (FRONTEND)"]
+        direction LR
+        PWA1["Terminal Punto de Venta (Local 1)<br/><i>SPA / Vue.js + Vite (Localhost)</i>"]
+        PWA2["Terminal Punto de Venta (Local 2)<br/><i>PWA Standalone + IndexedDB Cache</i>"]
+        MOB["Dispositivo Móvil Administradora<br/><i>Responsive Web App (Android / iOS)</i>"]
+    end
+
+    subgraph C2 ["CAPA 2: SEGURIDAD, ENRUTAMIENTO Y TRANSPORTE"]
+        direction LR
+        WG["Túnel Criptográfico WireGuard<br/><b>Puerto UDP 51820 (ChaCha20-Poly1305)</b>"]
+        HTTPS["Servidor Web Inverso Apache / Nginx<br/><b>TLS 1.3 / Puerto 443 (HTTPS)</b>"]
+        MID["Middleware de Seguridad<br/><i>Sanctum Auth + RBAC + Idempotencia</i>"]
+    end
+
+    subgraph C3 ["CAPA 3: NÚCLEO MODULAR DE NEGOCIO (LARAVEL 11 MONOLITO)"]
+        direction TB
+        subgraph MODS ["Módulos de Dominio Desacoplados"]
+            M_AUTH["1. Módulo Seguridad y Accesos<br/><i>Usuarios, Roles y Permisos</i>"]
+            M_CAT["2. Módulo Catálogo General<br/><i>Productos, Medicamentos, DIGEMID</i>"]
+            M_COM["3. Módulo Abastecimiento<br/><i>Compras, Proveedores y Recepción</i>"]
+            M_INV["4. Módulo Inventario y Stock<br/><i>Lotes Físicos, Políticas FEFO/FIFO</i>"]
+            M_VEN["5. Motor de Ventas Mostrador<br/><i>Bloqueo Pesimista, Tickets, ACID</i>"]
+            M_CAJ["6. Módulo Caja y Finanzas<br/><i>Apertura, Movimientos, Arqueo Ciego</i>"]
+            M_TUR["7. Módulo Turnos y Asignación<br/><i>Control de Horarios y Cajeras</i>"]
+            M_REP["8. Módulo Reportes y Auditoría<br/><i>Kardex, Balances y Bitácora</i>"]
+        end
+    end
+
+    subgraph C4 ["CAPA 4: PERSISTENCIA TRANSACCIONAL (POSTGRESQL 16)"]
+        direction LR
+        DB_CENTRAL[("PostgreSQL 16 (Maestro Central Local 1)<br/><b>37 Tablas Normalizadas + Partición por Local</b><br/><i>Aislamiento READ COMMITTED + WAL</i>")]
+        IDB_LOCAL[("IndexedDB Local 2 (Almacén Navegador)<br/><b>Caché Catálogo + Cola sync_queue</b>")]
+    end
+
+    subgraph C5 ["CAPA 5: HARDWARE Y PERIFÉRICOS DE TIENDA"]
+        direction LR
+        PRN["Impresoras Térmicas 80mm<br/><i>Protocolo ESC/POS (USB Raw)</i>"]
+        BAR["Lectores de Código de Barras<br/><i>Emulación Teclado USB HID (EAN-13)</i>"]
+        UPS["Sistema Eléctrico Protegido<br/><i>UPS 1000VA (Local 1) + 650VA (Local 2)</i>"]
+    end
+
+    %% Relaciones entre capas
+    PWA1 --> HTTPS
+    PWA2 --> WG
+    MOB --> WG
+    WG --> HTTPS
+    HTTPS --> MID
+    MID --> MODS
+
+    M_VEN --> DB_CENTRAL
+    M_INV --> DB_CENTRAL
+    M_CAT --> DB_CENTRAL
+    M_CAJ --> DB_CENTRAL
+    M_COM --> DB_CENTRAL
+    M_AUTH --> DB_CENTRAL
+    M_TUR --> DB_CENTRAL
+    M_REP --> DB_CENTRAL
+
+    PWA2 -.->|Modo Offline| IDB_LOCAL
+    IDB_LOCAL -.->|Sincronización Lote| MID
+
+    PWA1 === PRN
+    PWA1 === BAR
+    PWA2 === PRN
+    PWA2 === BAR
+    UPS -.-> PWA1
+    UPS -.-> PWA2`;
+
+    mermaid.initialize({
+      startOnLoad: false,
+      theme: 'base',
+      themeVariables: {
+        fontFamily: 'Segoe UI, Arial, sans-serif',
+        fontSize: '13px',
+        primaryColor: '#ccfbf1',
+        primaryTextColor: '#0f172a',
+        primaryBorderColor: '#0d9488',
+        lineColor: '#0f766e',
+        secondaryColor: '#ecfdf5',
+        tertiaryColor: '#f0fdfa'
+      }
+    });
+
+    let panZoomInstance = null;
+
+    async function renderDiagram() {
+      const target = document.getElementById('mermaid-target');
+      const { svg } = await mermaid.render('mermaid-svg-11', mermaidCode);
+      target.innerHTML = svg;
+
+      const svgElement = target.querySelector('svg');
+      svgElement.style.maxWidth = 'none';
+      panZoomInstance = svgPanZoom(svgElement, {
+        zoomEnabled: true,
+        controlIconsEnabled: false,
+        fit: true,
+        center: true,
+        minZoom: 0.25,
+        maxZoom: 5.0,
+        onZoom: function(newScale) {
+          document.getElementById('zoomText').textContent = `${Math.round(newScale * 100)}%`;
+        }
+      });
+
+      document.getElementById('btnZoomIn').addEventListener('click', () => panZoomInstance.zoomIn());
+      document.getElementById('btnZoomOut').addEventListener('click', () => panZoomInstance.zoomOut());
+      document.getElementById('btnFit').addEventListener('click', () => {
+        panZoomInstance.resize();
+        panZoomInstance.fit();
+        panZoomInstance.center();
+      });
+      document.getElementById('btnReset').addEventListener('click', () => {
+        panZoomInstance.reset();
+        panZoomInstance.fit();
+        panZoomInstance.center();
+      });
+
+      document.getElementById('btnCopy').addEventListener('click', () => {
+        navigator.clipboard.writeText(mermaidCode);
+        const btn = document.getElementById('btnCopy');
+        const orig = btn.textContent;
+        btn.textContent = '✓ Copiado';
+        setTimeout(() => btn.textContent = orig, 1500);
+      });
+    }
+
+    window.addEventListener('load', renderDiagram);
+    window.addEventListener('resize', () => {
+      if (panZoomInstance) {
+        panZoomInstance.resize();
+        panZoomInstance.fit();
+        panZoomInstance.center();
+      }
+    });
+    window.addEventListener('keydown', (e) => {
+      if ((e.key === 'm' || e.key === 'M') && window.parent && window.parent !== window && typeof window.parent.toggleSidebar === 'function') {
+        window.parent.toggleSidebar();
+      }
+    });
+  </script>
+</body>
+</html>

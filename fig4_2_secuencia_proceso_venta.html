@@ -1,0 +1,296 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Fig 4.2 - Secuencia Transaccional de Venta | Innofarma</title>
+  <script src="https://cdn.jsdelivr.net/npm/mermaid@10/dist/mermaid.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/svg-pan-zoom@3.6.1/dist/svg-pan-zoom.min.js"></script>
+  <style>
+    *, *::before, *::after {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+
+    html, body {
+      width: 100vw;
+      height: 100vh;
+      overflow: hidden;
+      background-color: #f8fafc;
+      color: #0f172a;
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+      user-select: none;
+      -webkit-user-select: none;
+    }
+
+    /* BARRA DE CONTROL FLOTANTE (ESTILO MARIFARMA SALUD) */
+    .hud-bar {
+      position: fixed;
+      top: 12px;
+      right: 16px;
+      z-index: 2000;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      background: #ffffff;
+      border: 1.5px solid #0d9488;
+      border-radius: 10px;
+      padding: 6px 14px;
+      font-size: 11.5px;
+      box-shadow: 0 4px 12px rgba(13, 148, 136, 0.12);
+    }
+
+    .hud-status-badge {
+      background: #0d9488;
+      color: #ffffff;
+      font-size: 10px;
+      font-weight: 700;
+      letter-spacing: 0.5px;
+      padding: 4px 8px;
+      border-radius: 6px;
+      text-transform: uppercase;
+      white-space: nowrap;
+    }
+
+    .hud-controls {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+
+    .btn-hud {
+      background: #ffffff;
+      color: #0f766e;
+      border: 1.5px solid #0d9488;
+      border-radius: 6px;
+      padding: 5px 10px;
+      font-family: inherit;
+      font-size: 11px;
+      font-weight: 700;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      gap: 4px;
+      transition: all 0.15s ease;
+      white-space: nowrap;
+    }
+
+    .btn-hud:hover {
+      background: #0d9488;
+      color: #ffffff;
+    }
+
+    .zoom-text {
+      font-weight: 700;
+      min-width: 44px;
+      text-align: center;
+      font-size: 11.5px;
+      color: #0f766e;
+    }
+
+    .hud-hint {
+      font-size: 10.5px;
+      color: #64748b;
+      margin-right: 6px;
+      white-space: nowrap;
+    }
+
+    #container {
+      width: 100vw;
+      height: 100vh;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      background: radial-gradient(#ccfbf1 1px, transparent 1px);
+      background-size: 24px 24px;
+      background-color: #f8fafc;
+      cursor: grab;
+    }
+
+    #container:active {
+      cursor: grabbing;
+    }
+
+    #mermaid-target {
+      width: 100%;
+      height: 100%;
+    }
+
+    #mermaid-target svg {
+      width: 100% !important;
+      height: 100% !important;
+    }
+  </style>
+</head>
+<body>
+
+  <header class="hud-bar">
+    <span class="hud-status-badge">VISTA DE PROCESOS</span>
+    <span class="hud-hint">Arrastrar: Pan | Rueda: Zoom</span>
+    <div class="hud-controls">
+      <button class="btn-hud" id="btnZoomOut">− Zoom</button>
+      <span class="zoom-text" id="zoomText">100%</span>
+      <button class="btn-hud" id="btnZoomIn">+ Zoom</button>
+      <button class="btn-hud" id="btnFit">Ajustar</button>
+      <button class="btn-hud" id="btnReset">Reset</button>
+      <button class="btn-hud" id="btnCopy">Copiar Código</button>
+    </div>
+  </header>
+
+  <div id="container">
+    <div id="mermaid-target"></div>
+  </div>
+
+  <script>
+    const mermaidCode = `sequenceDiagram
+    autonumber
+    actor Cajero as Cajero / POS (PWA)
+    participant Lector as Lector USB HID
+    participant Ticketera as Ticketera ESC/POS (80mm)
+    participant Controller as VentaController (Laravel 11)
+    participant Service as VentaService (Lógica FEFO)
+    participant DB as PostgreSQL 16 (Transaccional)
+
+    Note over Cajero,DB: FASE 1: Captura de Datos y Periféricos de Entrada
+    Cajero->>Lector: Escanea código de barras del medicamento
+    Lector-->>Cajero: Inyecta cadena EAN-13 + código Enter (ASCII 13)
+    Cajero->>Cajero: Valida receta médica (retención DIGEMID) y agrega a carrito
+    Cajero->>Controller: POST /api/v1/ventas (Payload JSON + UUID v4 único + Token Bearer)
+
+    Note over Controller,Service: FASE 2: Validación de Negocio y Precondiciones
+    Controller->>Service: autorizarYRegistrarVenta(datosVenta, usuarioAutenticado)
+    Service->>DB: SELECT id_sesion FROM sesiones_caja WHERE id_local = ? AND estado = 'ABIERTA'
+    alt ¿Sesión de caja cerrada?
+        DB-->>Service: Null / Sin sesión activa
+        Service-->>Controller: Excepción: CajaCerradaException
+        Controller-->>Cajero: HTTP 403 Forbidden ("Caja no habilitada para cobro")
+    else Sesión de caja abierta
+        DB-->>Service: SesionCaja ID: 104 (Válida)
+    end
+
+    Note over Service,DB: FASE 3: Transacción ACID y Bloqueo Pesimista (Concurrencia)
+    Service->>DB: BEGIN TRANSACTION (Nivel de Aislamiento: READ COMMITTED)
+    Service->>DB: SELECT id_lote, cantidad FROM lotes_producto WHERE producto_id = ? AND id_local = ? ORDER BY fecha_vencimiento ASC FOR UPDATE
+    Note right of DB: Bloqueo exclusivo de fila (Row-Level Lock).<br/>Si otra caja intenta vender el mismo lote,<br/>espera la liberación del lock (Evita Deadlock).
+
+    alt ¿Stock del lote insuficiente en este local?
+        DB-->>Service: Cantidad disponible < Cantidad solicitada
+        Service->>DB: ROLLBACK (Libera el bloqueo sin mutar datos)
+        Service-->>Controller: Excepción: StockInsuficienteException
+        Controller-->>Cajero: HTTP 422 Unprocessable Entity ("Stock insuficiente en sede")
+    else Stock disponible y lote vigente (FEFO OK)
+        DB-->>Service: Lote ID: L-2026-08 (Stock suficiente: 12 unidades)
+        
+        Note over Service,DB: FASE 4: Persistencia Atómica Multi-Tabla
+        Service->>DB: UPDATE stock_sucursal SET cantidad = cantidad - 2 WHERE id_lote = 'L-2026-08'
+        Service->>DB: INSERT INTO ventas (uuid, id_local, id_usuario, total, estado) VALUES ('a1b2-c3d4...', ...)
+        Service->>DB: INSERT INTO detalle_venta (id_venta, id_lote, cantidad, precio_unitario)
+        Service->>DB: INSERT INTO movimientos_caja (id_sesion, tipo='INGRESO', monto, id_venta)
+        Service->>DB: INSERT INTO bitacora_auditoria (id_usuario, accion='VENTA_CONFIRMADA')
+        Service->>DB: COMMIT ACID (Escritura síncrona duradera en SSD NVMe)
+        DB-->>Service: 200 OK (Transacción confirmada permanentemente)
+    end
+
+    Note over Controller,Ticketera: FASE 5: Emisión de Comprobante y Entrega Física
+    Service-->>Controller: Retorna Objeto Venta Persistido + Datos de Boleta
+    Controller-->>Cajero: HTTP 201 Created {status: "SUCCESS", venta_id: 8492, ticket_raw}
+    Cajero->>Ticketera: Enviar buffer ESC/POS (Comandos de corte automático 'GS V')
+    Ticketera-->>Cajero: Emite ticket térmico físico de venta
+    Cajero-->>Cajero: Entrega ticket y medicamentos al cliente (Fin de Atención)
+
+    Note over Cajero,DB: FASE 6: Manejo de Idempotencia ante Reintentos por Desconexión WAN
+    opt Si hubo microcorte de red y el cliente reintenta con el mismo UUID v4
+        Cajero->>Controller: POST /api/v1/ventas (Mismo UUID v4: 'a1b2-c3d4...')
+        Controller->>DB: SELECT id_venta FROM ventas WHERE uuid = 'a1b2-c3d4...'
+        DB-->>Controller: Registro existente (ID: 8492)
+        Controller-->>Cajero: HTTP 200 OK {status: "ALREADY_PROCESSED", comprobante_existente}
+        Note over Controller,Cajero: Idempotencia garantizada: NO duplica cobro ni descuenta stock doble
+    end`;
+
+    mermaid.initialize({
+      startOnLoad: false,
+      theme: 'base',
+      themeVariables: {
+        fontFamily: 'Segoe UI, Arial, sans-serif',
+        fontSize: '13px',
+        primaryColor: '#ccfbf1',
+        primaryTextColor: '#0f172a',
+        primaryBorderColor: '#0d9488',
+        lineColor: '#0f766e',
+        secondaryColor: '#ecfdf5',
+        tertiaryColor: '#f0fdfa',
+        noteBkgColor: '#f0fdfa',
+        noteTextColor: '#0f766e',
+        noteBorderColor: '#14b8a6',
+        actorBkg: '#0d9488',
+        actorTextColor: '#ffffff',
+        actorBorder: '#0f766e',
+        actorLineColor: '#0d9488',
+        signalColor: '#0f766e',
+        signalTextColor: '#0f172a',
+        labelBoxBkgColor: '#ccfbf1',
+        labelBoxBorderColor: '#0d9488',
+        labelTextColor: '#0f766e'
+      }
+    });
+
+    let panZoomInstance = null;
+
+    async function renderDiagram() {
+      const target = document.getElementById('mermaid-target');
+      const { svg } = await mermaid.render('mermaid-svg-42', mermaidCode);
+      target.innerHTML = svg;
+
+      const svgElement = target.querySelector('svg');
+      svgElement.style.maxWidth = 'none';
+      panZoomInstance = svgPanZoom(svgElement, {
+        zoomEnabled: true,
+        controlIconsEnabled: false,
+        fit: true,
+        center: true,
+        minZoom: 0.3,
+        maxZoom: 5.0,
+        onZoom: function(newScale) {
+          document.getElementById('zoomText').textContent = `${Math.round(newScale * 100)}%`;
+        }
+      });
+
+      document.getElementById('btnZoomIn').addEventListener('click', () => panZoomInstance.zoomIn());
+      document.getElementById('btnZoomOut').addEventListener('click', () => panZoomInstance.zoomOut());
+      document.getElementById('btnFit').addEventListener('click', () => {
+        panZoomInstance.resize();
+        panZoomInstance.fit();
+        panZoomInstance.center();
+      });
+      document.getElementById('btnReset').addEventListener('click', () => {
+        panZoomInstance.reset();
+        panZoomInstance.fit();
+        panZoomInstance.center();
+      });
+
+      document.getElementById('btnCopy').addEventListener('click', () => {
+        navigator.clipboard.writeText(mermaidCode);
+        const btn = document.getElementById('btnCopy');
+        const orig = btn.textContent;
+        btn.textContent = '✓ Copiado';
+        setTimeout(() => btn.textContent = orig, 1500);
+      });
+    }
+
+    window.addEventListener('load', renderDiagram);
+    window.addEventListener('resize', () => {
+      if (panZoomInstance) {
+        panZoomInstance.resize();
+        panZoomInstance.fit();
+        panZoomInstance.center();
+      }
+    });
+    window.addEventListener('keydown', (e) => {
+      if ((e.key === 'm' || e.key === 'M') && window.parent && window.parent !== window && typeof window.parent.toggleSidebar === 'function') {
+        window.parent.toggleSidebar();
+      }
+    });
+  </script>
+</body>
+</html>

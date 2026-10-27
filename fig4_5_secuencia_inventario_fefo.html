@@ -1,0 +1,278 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Fig 4.5 - Inventario y Lotes FEFO | Innofarma</title>
+  <script src="https://cdn.jsdelivr.net/npm/mermaid@10/dist/mermaid.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/svg-pan-zoom@3.6.1/dist/svg-pan-zoom.min.js"></script>
+  <style>
+    *, *::before, *::after {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+
+    html, body {
+      width: 100vw;
+      height: 100vh;
+      overflow: hidden;
+      background-color: #f8fafc;
+      color: #0f172a;
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+      user-select: none;
+      -webkit-user-select: none;
+    }
+
+    /* BARRA DE CONTROL FLOTANTE (ESTILO MARIFARMA SALUD) */
+    .hud-bar {
+      position: fixed;
+      top: 12px;
+      right: 16px;
+      z-index: 2000;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      background: #ffffff;
+      border: 1.5px solid #059669;
+      border-radius: 10px;
+      padding: 6px 14px;
+      font-size: 11.5px;
+      box-shadow: 0 4px 12px rgba(5, 150, 105, 0.12);
+    }
+
+    .hud-status-badge {
+      background: #059669;
+      color: #ffffff;
+      font-size: 10px;
+      font-weight: 700;
+      letter-spacing: 0.5px;
+      padding: 4px 8px;
+      border-radius: 6px;
+      text-transform: uppercase;
+      white-space: nowrap;
+    }
+
+    .hud-controls {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+
+    .btn-hud {
+      background: #ffffff;
+      color: #047857;
+      border: 1.5px solid #059669;
+      border-radius: 6px;
+      padding: 5px 10px;
+      font-family: inherit;
+      font-size: 11px;
+      font-weight: 700;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      gap: 4px;
+      transition: all 0.15s ease;
+      white-space: nowrap;
+    }
+
+    .btn-hud:hover {
+      background: #059669;
+      color: #ffffff;
+    }
+
+    .zoom-text {
+      font-weight: 700;
+      min-width: 44px;
+      text-align: center;
+      font-size: 11.5px;
+      color: #047857;
+    }
+
+    .hud-hint {
+      font-size: 10.5px;
+      color: #64748b;
+      margin-right: 6px;
+      white-space: nowrap;
+    }
+
+    #container {
+      width: 100vw;
+      height: 100vh;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      background: radial-gradient(#d1fae5 1px, transparent 1px);
+      background-size: 24px 24px;
+      background-color: #f8fafc;
+      cursor: grab;
+    }
+
+    #container:active {
+      cursor: grabbing;
+    }
+
+    #mermaid-target {
+      width: 100%;
+      height: 100%;
+    }
+
+    #mermaid-target svg {
+      width: 100% !important;
+      height: 100% !important;
+    }
+  </style>
+</head>
+<body>
+
+  <header class="hud-bar">
+    <span class="hud-status-badge">VISTA DE PROCESOS</span>
+    <span class="hud-hint">Arrastrar: Pan | Rueda: Zoom</span>
+    <div class="hud-controls">
+      <button class="btn-hud" id="btnZoomOut">− Zoom</button>
+      <span class="zoom-text" id="zoomText">100%</span>
+      <button class="btn-hud" id="btnZoomIn">+ Zoom</button>
+      <button class="btn-hud" id="btnFit">Ajustar</button>
+      <button class="btn-hud" id="btnReset">Reset</button>
+      <button class="btn-hud" id="btnCopy">Copiar Código</button>
+    </div>
+  </header>
+
+  <div id="container">
+    <div id="mermaid-target"></div>
+  </div>
+
+  <script>
+    const mermaidCode = `sequenceDiagram
+    autonumber
+    actor Almacenero as Técnico de Farmacia / Almacenero
+    participant PWA as Módulo Inventario (PWA)
+    participant Ctrl as InventarioController (Laravel 11)
+    participant Service as StockService (Reglas Sanitarias FEFO)
+    participant DB as PostgreSQL 16 (Transaccional)
+
+    Note over Almacenero,DB: FASE 1: Recepción Física e Ingreso de Lote (ILA-0001)
+    Almacenero->>PWA: Escanea producto y digita datos de lote: N° Lote, F. Vencimiento, Cantidad, Proveedor y Local
+    PWA->>PWA: Valida formato de fecha y cantidad entera positiva > 0
+    PWA->>Ctrl: POST /api/v1/inventario/lotes (Payload JSON + Token Bearer)
+
+    Note over Ctrl,Service: FASE 2: Validación de Reglas Sanitarias y Caducidad (EDU-0002 / RNF-0008)
+    Ctrl->>Service: ingresarLoteInventario(datosLote, idUsuario)
+    Service->>Service: Validar fecha_vencimiento contra directiva DIGEMID (> 180 días de vida útil)
+    
+    alt ¿Lote con fecha vencida o caducidad menor a 6 meses?
+        Service-->>Ctrl: Excepción: LoteCaducadoException
+        Ctrl-->>PWA: HTTP 422 Unprocessable Entity ("Rechazo sanitario: El lote no cumple el tiempo mínimo de vigencia")
+        PWA-->>Almacenero: Alerta roja: "Rechazar mercadería al proveedor por vencimiento próximo"
+    else Lote vigente sanitario OK
+        Note over Service,DB: FASE 3: Transacción Atómica de Entrada de Stock por Local (Partición Física)
+        Service->>DB: BEGIN TRANSACTION (Nivel de Aislamiento: READ COMMITTED)
+        
+        Service->>DB: SELECT id_lote FROM lotes_producto WHERE numero_lote = ? AND producto_id = ? AND id_local = ?
+        alt ¿El lote ya existe en este local físico?
+            DB-->>Service: Lote ID: 304 (Lote preexistente)
+            Service->>DB: UPDATE lotes_producto SET stock_actual = stock_actual + ? WHERE id_lote = 304
+        else Lote nuevo para esta sucursal
+            DB-->>Service: Null
+            Service->>DB: INSERT INTO lotes_producto (producto_id, id_local, numero_lote, fecha_vencimiento, stock_inicial, stock_actual, estado) VALUES (512, 1, 'LT-2026-X9', '2028-05-15', 50, 50, 'DISPONIBLE') RETURNING id_lote
+            DB-->>Service: Nuevo Lote ID: 815
+        end
+        
+        Service->>DB: INSERT INTO movimientos_inventario (id_lote, id_local, id_usuario, tipo_movimiento='INGRESO_COMPRA', cantidad=50, motivo='Recepción Guía 001-928')
+        Service->>DB: UPDATE stock_sucursal SET total_unidades = total_unidades + 50 WHERE producto_id = 512 AND id_local = 1
+        Service->>DB: INSERT INTO bitacora_auditoria (id_usuario, accion='INGRESO_STOCK_LOTE', registro_id=815)
+        Service->>DB: COMMIT TRANSACTION (Escritura síncrona duradera)
+        DB-->>Service: Transacción confirmada exitosamente
+        
+        Note over Ctrl,Almacenero: FASE 4: Indexación FEFO y Confirmación Operativa (ILA-0002)
+        Service-->>Ctrl: Retorna Resumen de Stock Actualizado por Local
+        Ctrl-->>PWA: HTTP 201 Created {status: "SUCCESS", lote_id: 815, nuevo_stock_local: 120}
+        PWA-->>Almacenero: Confirmación visual: "Lote ingresado y disponible para dispensación FEFO"
+    end`;
+
+    mermaid.initialize({
+      startOnLoad: false,
+      theme: 'base',
+      themeVariables: {
+        fontFamily: 'Segoe UI, Arial, sans-serif',
+        fontSize: '13px',
+        primaryColor: '#d1fae5',
+        primaryTextColor: '#064e3b',
+        primaryBorderColor: '#059669',
+        lineColor: '#047857',
+        secondaryColor: '#ccfbf1',
+        tertiaryColor: '#f0fdfa',
+        noteBkgColor: '#f0fdfa',
+        noteTextColor: '#047857',
+        noteBorderColor: '#10b981',
+        actorBkg: '#059669',
+        actorTextColor: '#ffffff',
+        actorBorder: '#047857',
+        actorLineColor: '#059669',
+        signalColor: '#047857',
+        signalTextColor: '#064e3b',
+        labelBoxBkgColor: '#d1fae5',
+        labelBoxBorderColor: '#059669',
+        labelTextColor: '#047857'
+      }
+    });
+
+    let panZoomInstance = null;
+
+    async function renderDiagram() {
+      const target = document.getElementById('mermaid-target');
+      const { svg } = await mermaid.render('mermaid-svg-45', mermaidCode);
+      target.innerHTML = svg;
+
+      const svgElement = target.querySelector('svg');
+      svgElement.style.maxWidth = 'none';
+      panZoomInstance = svgPanZoom(svgElement, {
+        zoomEnabled: true,
+        controlIconsEnabled: false,
+        fit: true,
+        center: true,
+        minZoom: 0.25,
+        maxZoom: 5.0,
+        onZoom: function(newScale) {
+          document.getElementById('zoomText').textContent = `${Math.round(newScale * 100)}%`;
+        }
+      });
+
+      document.getElementById('btnZoomIn').addEventListener('click', () => panZoomInstance.zoomIn());
+      document.getElementById('btnZoomOut').addEventListener('click', () => panZoomInstance.zoomOut());
+      document.getElementById('btnFit').addEventListener('click', () => {
+        panZoomInstance.resize();
+        panZoomInstance.fit();
+        panZoomInstance.center();
+      });
+      document.getElementById('btnReset').addEventListener('click', () => {
+        panZoomInstance.reset();
+        panZoomInstance.fit();
+        panZoomInstance.center();
+      });
+
+      document.getElementById('btnCopy').addEventListener('click', () => {
+        navigator.clipboard.writeText(mermaidCode);
+        const btn = document.getElementById('btnCopy');
+        const orig = btn.textContent;
+        btn.textContent = '✓ Copiado';
+        setTimeout(() => btn.textContent = orig, 1500);
+      });
+    }
+
+    window.addEventListener('load', renderDiagram);
+    window.addEventListener('resize', () => {
+      if (panZoomInstance) {
+        panZoomInstance.resize();
+        panZoomInstance.fit();
+        panZoomInstance.center();
+      }
+    });
+    window.addEventListener('keydown', (e) => {
+      if ((e.key === 'm' || e.key === 'M') && window.parent && window.parent !== window && typeof window.parent.toggleSidebar === 'function') {
+        window.parent.toggleSidebar();
+      }
+    });
+  </script>
+</body>
+</html>

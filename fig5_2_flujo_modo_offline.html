@@ -1,0 +1,243 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Fig 5.2 - Flujo Modo Offline | Innofarma</title>
+  <script src="https://cdn.jsdelivr.net/npm/mermaid@10/dist/mermaid.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/svg-pan-zoom@3.6.1/dist/svg-pan-zoom.min.js"></script>
+  <style>
+    *, *::before, *::after {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+
+    html, body {
+      width: 100vw;
+      height: 100vh;
+      overflow: hidden;
+      background-color: #f8fafc;
+      color: #0f172a;
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+      user-select: none;
+      -webkit-user-select: none;
+    }
+
+    /* BARRA DE CONTROL FLOTANTE (ESTILO MARIFARMA SALUD) */
+    .hud-bar {
+      position: fixed;
+      top: 12px;
+      right: 16px;
+      z-index: 2000;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      background: #ffffff;
+      border: 1.5px solid #0284c7;
+      border-radius: 10px;
+      padding: 6px 14px;
+      font-size: 11.5px;
+      box-shadow: 0 4px 12px rgba(2, 132, 199, 0.12);
+    }
+
+    .hud-status-badge {
+      background: #0284c7;
+      color: #ffffff;
+      font-size: 10px;
+      font-weight: 700;
+      letter-spacing: 0.5px;
+      padding: 4px 8px;
+      border-radius: 6px;
+      text-transform: uppercase;
+      white-space: nowrap;
+    }
+
+    .hud-controls {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+
+    .btn-hud {
+      background: #ffffff;
+      color: #0369a1;
+      border: 1.5px solid #0284c7;
+      border-radius: 6px;
+      padding: 5px 10px;
+      font-family: inherit;
+      font-size: 11px;
+      font-weight: 700;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      gap: 4px;
+      transition: all 0.15s ease;
+      white-space: nowrap;
+    }
+
+    .btn-hud:hover {
+      background: #0284c7;
+      color: #ffffff;
+    }
+
+    .zoom-text {
+      font-weight: 700;
+      min-width: 44px;
+      text-align: center;
+      font-size: 11.5px;
+      color: #0369a1;
+    }
+
+    .hud-hint {
+      font-size: 10.5px;
+      color: #64748b;
+      margin-right: 6px;
+      white-space: nowrap;
+    }
+
+    #container {
+      width: 100vw;
+      height: 100vh;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      background: radial-gradient(#e0f2fe 1px, transparent 1px);
+      background-size: 24px 24px;
+      background-color: #f8fafc;
+      cursor: grab;
+    }
+
+    #container:active {
+      cursor: grabbing;
+    }
+
+    #mermaid-target {
+      width: 100%;
+      height: 100%;
+    }
+
+    #mermaid-target svg {
+      width: 100% !important;
+      height: 100% !important;
+    }
+  </style>
+</head>
+<body>
+
+  <header class="hud-bar">
+    <span class="hud-status-badge">VISTA FÍSICA</span>
+    <span class="hud-hint">Arrastrar: Pan | Rueda: Zoom</span>
+    <div class="hud-controls">
+      <button class="btn-hud" id="btnZoomOut">− Zoom</button>
+      <span class="zoom-text" id="zoomText">100%</span>
+      <button class="btn-hud" id="btnZoomIn">+ Zoom</button>
+      <button class="btn-hud" id="btnFit">Ajustar</button>
+      <button class="btn-hud" id="btnReset">Reset</button>
+      <button class="btn-hud" id="btnCopy">Copiar Código</button>
+    </div>
+  </header>
+
+  <div id="container">
+    <div id="mermaid-target"></div>
+  </div>
+
+  <script>
+    const mermaidCode = `flowchart TD
+    Inicio([Inicio: Registrar Venta en Local 2]) --> Escanear[Escanear producto con lector de barra / Seleccionar]
+    Escanear --> CheckRed{¿Hay conexión VPN<br/>con el Servidor PC1?}
+    
+    %% Flujo Online
+    CheckRed -->|"Sí (En Línea)"| ConsultaCentral[Consultar Stock Central en Servidor PC1]
+    ConsultaCentral --> HayStockCentral{¿Stock disponible<br/>en Local 2 > 0?}
+    HayStockCentral -->|"No"| BloquearCentral[Bloquear venta: Producto agotado en este local] --> Fin([Fin])
+    HayStockCentral -->|"Sí"| CobrarOnline[Cobrar y Emitir Comprobante]
+    CobrarOnline --> DescontarCentral[Descontar Stock en PostgreSQL PC1]
+    DescontarCentral --> ActualizarIDB[Actualizar copia local en IndexedDB]
+    ActualizarIDB --> ImprimirTicket1[Imprimir Ticket de Venta] --> Fin
+    
+    %% Flujo Offline
+    CheckRed -->|"No (Sin Conexión)"| ActivarModoOffline[Activar Modo Fuera de Línea en Navegador]
+    ActivarModoOffline --> ConsultarLocal[Consultar Stock Local en IndexedDB]
+    ConsultarLocal --> HayStockLocal{¿Stock Local 2 en<br/>IndexedDB > 0?}
+    
+    HayStockLocal -->|"No"| BloquearVenta[Bloquear venta: Evita venta fantasma de medicamentos] --> Fin
+    HayStockLocal -->|"Sí"| GenerarUUID[Generar Venta con UUID único v4 en navegador]
+    GenerarUUID --> DescontarLocal[Descontar Stock Estimado en IndexedDB]
+    DescontarLocal --> GuardarCola[Encolar Venta en sync_queue de IndexedDB]
+    GuardarCola --> ImprimirOffline[Imprimir Ticket con Marca: 'PENDIENTE DE VALIDEZ FISCAL'] --> Fin`;
+
+    mermaid.initialize({
+      startOnLoad: false,
+      theme: 'base',
+      themeVariables: {
+        fontFamily: 'Segoe UI, Arial, sans-serif',
+        fontSize: '13px',
+        primaryColor: '#e0f2fe',
+        primaryTextColor: '#0c4a6e',
+        primaryBorderColor: '#0284c7',
+        lineColor: '#0284c7',
+        secondaryColor: '#ccfbf1',
+        tertiaryColor: '#f0fdfa'
+      }
+    });
+
+    let panZoomInstance = null;
+
+    async function renderDiagram() {
+      const target = document.getElementById('mermaid-target');
+      const { svg } = await mermaid.render('mermaid-svg-52', mermaidCode);
+      target.innerHTML = svg;
+
+      const svgElement = target.querySelector('svg');
+      svgElement.style.maxWidth = 'none';
+      panZoomInstance = svgPanZoom(svgElement, {
+        zoomEnabled: true,
+        controlIconsEnabled: false,
+        fit: true,
+        center: true,
+        minZoom: 0.25,
+        maxZoom: 5.0,
+        onZoom: function(newScale) {
+          document.getElementById('zoomText').textContent = `${Math.round(newScale * 100)}%`;
+        }
+      });
+
+      document.getElementById('btnZoomIn').addEventListener('click', () => panZoomInstance.zoomIn());
+      document.getElementById('btnZoomOut').addEventListener('click', () => panZoomInstance.zoomOut());
+      document.getElementById('btnFit').addEventListener('click', () => {
+        panZoomInstance.resize();
+        panZoomInstance.fit();
+        panZoomInstance.center();
+      });
+      document.getElementById('btnReset').addEventListener('click', () => {
+        panZoomInstance.reset();
+        panZoomInstance.fit();
+        panZoomInstance.center();
+      });
+
+      document.getElementById('btnCopy').addEventListener('click', () => {
+        navigator.clipboard.writeText(mermaidCode);
+        const btn = document.getElementById('btnCopy');
+        const orig = btn.textContent;
+        btn.textContent = '✓ Copiado';
+        setTimeout(() => btn.textContent = orig, 1500);
+      });
+    }
+
+    window.addEventListener('load', renderDiagram);
+    window.addEventListener('resize', () => {
+      if (panZoomInstance) {
+        panZoomInstance.resize();
+        panZoomInstance.fit();
+        panZoomInstance.center();
+      }
+    });
+    window.addEventListener('keydown', (e) => {
+      if ((e.key === 'm' || e.key === 'M') && window.parent && window.parent !== window && typeof window.parent.toggleSidebar === 'function') {
+        window.parent.toggleSidebar();
+      }
+    });
+  </script>
+</body>
+</html>

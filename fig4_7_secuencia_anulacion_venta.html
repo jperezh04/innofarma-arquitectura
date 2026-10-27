@@ -1,0 +1,285 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Fig 4.7 - Anulación y Compensación | Innofarma</title>
+  <script src="https://cdn.jsdelivr.net/npm/mermaid@10/dist/mermaid.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/svg-pan-zoom@3.6.1/dist/svg-pan-zoom.min.js"></script>
+  <style>
+    *, *::before, *::after {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+
+    html, body {
+      width: 100vw;
+      height: 100vh;
+      overflow: hidden;
+      background-color: #f8fafc;
+      color: #0f172a;
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+      user-select: none;
+      -webkit-user-select: none;
+    }
+
+    /* BARRA DE CONTROL FLOTANTE (ESTILO MARIFARMA SALUD) */
+    .hud-bar {
+      position: fixed;
+      top: 12px;
+      right: 16px;
+      z-index: 2000;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      background: #ffffff;
+      border: 1.5px solid #0d9488;
+      border-radius: 10px;
+      padding: 6px 14px;
+      font-size: 11.5px;
+      box-shadow: 0 4px 12px rgba(13, 148, 136, 0.12);
+    }
+
+    .hud-status-badge {
+      background: #0d9488;
+      color: #ffffff;
+      font-size: 10px;
+      font-weight: 700;
+      letter-spacing: 0.5px;
+      padding: 4px 8px;
+      border-radius: 6px;
+      text-transform: uppercase;
+      white-space: nowrap;
+    }
+
+    .hud-controls {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+
+    .btn-hud {
+      background: #ffffff;
+      color: #0f766e;
+      border: 1.5px solid #0d9488;
+      border-radius: 6px;
+      padding: 5px 10px;
+      font-family: inherit;
+      font-size: 11px;
+      font-weight: 700;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      gap: 4px;
+      transition: all 0.15s ease;
+      white-space: nowrap;
+    }
+
+    .btn-hud:hover {
+      background: #0d9488;
+      color: #ffffff;
+    }
+
+    .zoom-text {
+      font-weight: 700;
+      min-width: 44px;
+      text-align: center;
+      font-size: 11.5px;
+      color: #0f766e;
+    }
+
+    .hud-hint {
+      font-size: 10.5px;
+      color: #64748b;
+      margin-right: 6px;
+      white-space: nowrap;
+    }
+
+    #container {
+      width: 100vw;
+      height: 100vh;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      background: radial-gradient(#ccfbf1 1px, transparent 1px);
+      background-size: 24px 24px;
+      background-color: #f8fafc;
+      cursor: grab;
+    }
+
+    #container:active {
+      cursor: grabbing;
+    }
+
+    #mermaid-target {
+      width: 100%;
+      height: 100%;
+    }
+
+    #mermaid-target svg {
+      width: 100% !important;
+      height: 100% !important;
+    }
+  </style>
+</head>
+<body>
+
+  <header class="hud-bar">
+    <span class="hud-status-badge">VISTA DE PROCESOS</span>
+    <span class="hud-hint">Arrastrar: Pan | Rueda: Zoom</span>
+    <div class="hud-controls">
+      <button class="btn-hud" id="btnZoomOut">− Zoom</button>
+      <span class="zoom-text" id="zoomText">100%</span>
+      <button class="btn-hud" id="btnZoomIn">+ Zoom</button>
+      <button class="btn-hud" id="btnFit">Ajustar</button>
+      <button class="btn-hud" id="btnReset">Reset</button>
+      <button class="btn-hud" id="btnCopy">Copiar Código</button>
+    </div>
+  </header>
+
+  <div id="container">
+    <div id="mermaid-target"></div>
+  </div>
+
+  <script>
+    const mermaidCode = `sequenceDiagram
+    autonumber
+    actor Admin as Administradora / Supervisora
+    participant PWA as Módulo Ventas (PWA)
+    participant Ticketera as Ticketera ESC/POS (80mm)
+    participant Ctrl as AnulacionController (Laravel 11)
+    participant Service as CompensacionService (Reversión Transaccional)
+    participant DB as PostgreSQL 16 (Transaccional)
+
+    Note over Admin,DB: FASE 1: Búsqueda y Selección de Venta a Anular (ILA-0006)
+    Admin->>PWA: Ingresa número de ticket (ej. B001-000452) o escanea código QR del comprobante
+    PWA->>Ctrl: GET /api/v1/ventas/buscar?serie_correlativo=B001-000452
+    Ctrl->>DB: SELECT v.id_venta, v.total, v.estado, dv.id_lote, dv.cantidad FROM ventas v JOIN detalle_venta dv ON v.id_venta = dv.id_venta WHERE v.comprobante = 'B001-000452'
+    DB-->>Ctrl: Registro de Venta Activa (Total: S/ 45.00, Lote: L-2026-08, Cant: 2 unidades)
+    Ctrl-->>PWA: Muestra detalle de la venta, ítems y medio de pago original
+
+    Note over Admin,Ctrl: FASE 2: Autorización y Registro de Causa Justificada (ILA-0007)
+    Admin->>PWA: Selecciona "Anular Operación" + Ingresa Motivo (ej. "Error de digitación / Producto no retirado")
+    Admin->>PWA: Ingresa credencial de confirmación de supervisor (PIN / Contraseña)
+    PWA->>Ctrl: POST /api/v1/ventas/8492/anular {motivo: "Devolución en mostrador", pin_supervisor}
+
+    Note over Ctrl,Service: FASE 3: Validación de Precondiciones de Anulación (RNF-0005 / RNF-0008)
+    Ctrl->>Service: ejecutarAnulacionVenta(8492, motivo, idSupervisor)
+    Service->>DB: SELECT estado, id_sesion FROM ventas WHERE id_venta = 8492 FOR UPDATE
+    
+    alt ¿Venta ya anulada previamente? (Idempotencia de anulación)
+        DB-->>Service: Estado = 'ANULADA'
+        Service-->>Ctrl: Excepción: VentaYaAnuladaException
+        Ctrl-->>PWA: HTTP 409 Conflict ("La venta ya fue anulada previamente")
+    else Venta activa elegible para anulación
+        Note over Service,DB: FASE 4: Compensación Atómica Multi-Tabla (Transacción ACID)
+        Service->>DB: BEGIN TRANSACTION (Nivel de Aislamiento: READ COMMITTED)
+        
+        Service->>DB: UPDATE ventas SET estado = 'ANULADA', motivo_anulacion = ?, anulado_por = ?, fecha_anulacion = NOW() WHERE id_venta = 8492
+        
+        loop Reintegro físico de medicamentos al lote original
+            Service->>DB: UPDATE lotes_producto SET stock_actual = stock_actual + 2 WHERE id_lote = 'L-2026-08'
+            Service->>DB: INSERT INTO movimientos_inventario (id_lote, tipo_movimiento='DEVOLUCION_ANULACION', cantidad=2, motivo='Anulación B001-000452')
+            Service->>DB: UPDATE stock_sucursal SET total_unidades = total_unidades + 2 WHERE producto_id = 512 AND id_local = 1
+        end
+        
+        Service->>DB: INSERT INTO movimientos_caja (id_sesion, tipo_movimiento='EGRESO_ANULACION', monto = -45.00, id_venta=8492, motivo='Reembolso al cliente')
+        Service->>DB: INSERT INTO bitacora_auditoria (id_usuario, accion='ANULACION_VENTA_CONFIRMADA', registro_id=8492)
+        Service->>DB: COMMIT TRANSACTION (Reversión integral garantizada)
+        DB-->>Service: Transacción exitosa confirmada
+        
+        Note over Ctrl,Ticketera: FASE 5: Emisión de Comprobante de Anulación / Nota de Crédito
+        Service-->>Ctrl: Retorna Constancia de Reversión y Nota de Crédito Interna
+        Ctrl-->>PWA: HTTP 200 OK {status: "CANCELLED", nota_credito: "NC01-000042"}
+        PWA->>Ticketera: Enviar comando de impresión de comprobante de anulación
+        Ticketera-->>PWA: Emite ticket de Nota de Crédito / Devolución
+        PWA-->>Admin: Notificación visual: "Venta B001-000452 anulada. Stock devuelto a inventario y caja ajustada"
+    end`;
+
+    mermaid.initialize({
+      startOnLoad: false,
+      theme: 'base',
+      themeVariables: {
+        fontFamily: 'Segoe UI, Arial, sans-serif',
+        fontSize: '13px',
+        primaryColor: '#ccfbf1',
+        primaryTextColor: '#0f172a',
+        primaryBorderColor: '#0d9488',
+        lineColor: '#0f766e',
+        secondaryColor: '#ecfdf5',
+        tertiaryColor: '#f0fdfa',
+        noteBkgColor: '#f0fdfa',
+        noteTextColor: '#0f766e',
+        noteBorderColor: '#14b8a6',
+        actorBkg: '#0d9488',
+        actorTextColor: '#ffffff',
+        actorBorder: '#0f766e',
+        actorLineColor: '#0d9488',
+        signalColor: '#0f766e',
+        signalTextColor: '#0f172a',
+        labelBoxBkgColor: '#ccfbf1',
+        labelBoxBorderColor: '#0d9488',
+        labelTextColor: '#0f766e'
+      }
+    });
+
+    let panZoomInstance = null;
+
+    async function renderDiagram() {
+      const target = document.getElementById('mermaid-target');
+      const { svg } = await mermaid.render('mermaid-svg-47', mermaidCode);
+      target.innerHTML = svg;
+
+      const svgElement = target.querySelector('svg');
+      svgElement.style.maxWidth = 'none';
+      panZoomInstance = svgPanZoom(svgElement, {
+        zoomEnabled: true,
+        controlIconsEnabled: false,
+        fit: true,
+        center: true,
+        minZoom: 0.25,
+        maxZoom: 5.0,
+        onZoom: function(newScale) {
+          document.getElementById('zoomText').textContent = `${Math.round(newScale * 100)}%`;
+        }
+      });
+
+      document.getElementById('btnZoomIn').addEventListener('click', () => panZoomInstance.zoomIn());
+      document.getElementById('btnZoomOut').addEventListener('click', () => panZoomInstance.zoomOut());
+      document.getElementById('btnFit').addEventListener('click', () => {
+        panZoomInstance.resize();
+        panZoomInstance.fit();
+        panZoomInstance.center();
+      });
+      document.getElementById('btnReset').addEventListener('click', () => {
+        panZoomInstance.reset();
+        panZoomInstance.fit();
+        panZoomInstance.center();
+      });
+
+      document.getElementById('btnCopy').addEventListener('click', () => {
+        navigator.clipboard.writeText(mermaidCode);
+        const btn = document.getElementById('btnCopy');
+        const orig = btn.textContent;
+        btn.textContent = '✓ Copiado';
+        setTimeout(() => btn.textContent = orig, 1500);
+      });
+    }
+
+    window.addEventListener('load', renderDiagram);
+    window.addEventListener('resize', () => {
+      if (panZoomInstance) {
+        panZoomInstance.resize();
+        panZoomInstance.fit();
+        panZoomInstance.center();
+      }
+    });
+    window.addEventListener('keydown', (e) => {
+      if ((e.key === 'm' || e.key === 'M') && window.parent && window.parent !== window && typeof window.parent.toggleSidebar === 'function') {
+        window.parent.toggleSidebar();
+      }
+    });
+  </script>
+</body>
+</html>

@@ -1,0 +1,278 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Fig 5.3 - Secuencia de Sincronización Post-Corte | Innofarma</title>
+  <script src="https://cdn.jsdelivr.net/npm/mermaid@10/dist/mermaid.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/svg-pan-zoom@3.6.1/dist/svg-pan-zoom.min.js"></script>
+  <style>
+    *, *::before, *::after {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+
+    html, body {
+      width: 100vw;
+      height: 100vh;
+      overflow: hidden;
+      background-color: #f8fafc;
+      color: #0f172a;
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+      user-select: none;
+      -webkit-user-select: none;
+    }
+
+    /* BARRA DE CONTROL FLOTANTE (ESTILO MARIFARMA SALUD) */
+    .hud-bar {
+      position: fixed;
+      top: 12px;
+      right: 16px;
+      z-index: 2000;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      background: #ffffff;
+      border: 1.5px solid #0d9488;
+      border-radius: 10px;
+      padding: 6px 14px;
+      font-size: 11.5px;
+      box-shadow: 0 4px 12px rgba(13, 148, 136, 0.12);
+    }
+
+    .hud-status-badge {
+      background: #0d9488;
+      color: #ffffff;
+      font-size: 10px;
+      font-weight: 700;
+      letter-spacing: 0.5px;
+      padding: 4px 8px;
+      border-radius: 6px;
+      text-transform: uppercase;
+      white-space: nowrap;
+    }
+
+    .hud-controls {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+
+    .btn-hud {
+      background: #ffffff;
+      color: #0f766e;
+      border: 1.5px solid #0d9488;
+      border-radius: 6px;
+      padding: 5px 10px;
+      font-family: inherit;
+      font-size: 11px;
+      font-weight: 700;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      gap: 4px;
+      transition: all 0.15s ease;
+      white-space: nowrap;
+    }
+
+    .btn-hud:hover {
+      background: #0d9488;
+      color: #ffffff;
+    }
+
+    .zoom-text {
+      font-weight: 700;
+      min-width: 44px;
+      text-align: center;
+      font-size: 11.5px;
+      color: #0f766e;
+    }
+
+    .hud-hint {
+      font-size: 10.5px;
+      color: #64748b;
+      margin-right: 6px;
+      white-space: nowrap;
+    }
+
+    #container {
+      width: 100vw;
+      height: 100vh;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      background: radial-gradient(#ccfbf1 1px, transparent 1px);
+      background-size: 24px 24px;
+      background-color: #f8fafc;
+      cursor: grab;
+    }
+
+    #container:active {
+      cursor: grabbing;
+    }
+
+    #mermaid-target {
+      width: 100%;
+      height: 100%;
+    }
+
+    #mermaid-target svg {
+      width: 100% !important;
+      height: 100% !important;
+    }
+  </style>
+</head>
+<body>
+
+  <header class="hud-bar">
+    <span class="hud-status-badge">VISTA FÍSICA</span>
+    <span class="hud-hint">Arrastrar: Pan | Rueda: Zoom</span>
+    <div class="hud-controls">
+      <button class="btn-hud" id="btnZoomOut">− Zoom</button>
+      <span class="zoom-text" id="zoomText">100%</span>
+      <button class="btn-hud" id="btnZoomIn">+ Zoom</button>
+      <button class="btn-hud" id="btnFit">Ajustar</button>
+      <button class="btn-hud" id="btnReset">Reset</button>
+      <button class="btn-hud" id="btnCopy">Copiar Código</button>
+    </div>
+  </header>
+
+  <div id="container">
+    <div id="mermaid-target"></div>
+  </div>
+
+  <script>
+    const mermaidCode = `sequenceDiagram
+    autonumber
+    actor Cajero as Cajero (Local 2)
+    participant Navegador as Navegador Web (Local 2)
+    participant IndexedDB as IndexedDB (Dexie.js)
+    participant WireGuard as Túnel WireGuard (PC2 -> PC1)
+    participant Backend as Backend Laravel (PC1)
+    participant DB as PostgreSQL (PC1)
+
+    Note over Cajero,IndexedDB: FASE 1: Operación Sin Conexión (Offline)
+    Cajero->>Navegador: Registra Venta de Amoxicilina (2 unidades)
+    Navegador->>IndexedDB: Comprueba stock local (Disponible: 5)
+    IndexedDB-->>Navegador: Stock suficiente
+    Navegador->>IndexedDB: Decrementa stock local (Quedan: 3)
+    Navegador->>IndexedDB: Guarda venta con UUID: "a1b2-c3d4-e5f6" (Estado: PENDING)
+    Navegador-->>Cajero: Imprime Comprobante Físico (Venta Exitosa)
+
+    Note over Navegador,DB: FASE 2: Detección de Reconexión de Red
+    WireGuard->>WireGuard: Túnel VPN restablecido con éxito (Handshake OK)
+    Navegador->>Navegador: Evento 'window.online' disparado
+    Navegador->>Backend: Ping de Salud: GET /api/v1/healthcheck
+    Backend-->>Navegador: 200 OK (Servidor Central activo)
+
+    Note over Navegador,DB: FASE 3: Conciliación e Idempotencia
+    Navegador->>IndexedDB: Lee ventas con estado PENDING
+    IndexedDB-->>Navegador: Retorna venta ["a1b2-c3d4-e5f6"]
+    Navegador->>Backend: POST /api/v1/sync/sales (Payload con UUID + detalles)
+    
+    Backend->>DB: Inicia Transacción SQL (BEGIN)
+    Backend->>DB: SELECT id FROM ventas WHERE uuid = 'a1b2-c3d4-e5f6'
+    alt ¿El UUID ya fue procesado antes?
+        DB-->>Backend: Ya existe registro
+        Backend->>DB: ROLLBACK (Evita duplicación)
+        Backend-->>Navegador: 200 OK {status: "ALREADY_SYNCED"}
+    else Es una venta nueva
+        DB-->>Backend: No existe
+        Backend->>DB: INSERT INTO ventas (uuid, sucursal_id, total, ...)
+        Backend->>DB: UPDATE stock_sucursal SET stock = stock - 2 WHERE sucursal = 2
+        Backend->>DB: COMMIT Transacción
+        Backend-->>Navegador: 201 CREATED {status: "SYNC_SUCCESS"}
+    end
+
+    Navegador->>IndexedDB: Marca venta UUID como SYNCED
+    Navegador->>Backend: GET /api/v1/catalog/stock?sucursal=2 (Descarga snapshot fresco)
+    Backend-->>Navegador: Retorna catálogo maestro actualizado
+    Navegador->>IndexedDB: Sobrescribe catálogo local garantizando consistencia`;
+
+    mermaid.initialize({
+      startOnLoad: false,
+      theme: 'base',
+      themeVariables: {
+        fontFamily: 'Segoe UI, Arial, sans-serif',
+        fontSize: '13px',
+        primaryColor: '#ccfbf1',
+        primaryTextColor: '#0f172a',
+        primaryBorderColor: '#0d9488',
+        lineColor: '#0f766e',
+        secondaryColor: '#ecfdf5',
+        tertiaryColor: '#f0fdfa',
+        noteBkgColor: '#f0fdfa',
+        noteTextColor: '#0f766e',
+        noteBorderColor: '#14b8a6',
+        actorBkg: '#0d9488',
+        actorTextColor: '#ffffff',
+        actorBorder: '#0f766e',
+        actorLineColor: '#0d9488',
+        signalColor: '#0f766e',
+        signalTextColor: '#0f172a',
+        labelBoxBkgColor: '#ccfbf1',
+        labelBoxBorderColor: '#0d9488',
+        labelTextColor: '#0f766e'
+      }
+    });
+
+    let panZoomInstance = null;
+
+    async function renderDiagram() {
+      const target = document.getElementById('mermaid-target');
+      const { svg } = await mermaid.render('mermaid-svg-53', mermaidCode);
+      target.innerHTML = svg;
+
+      const svgElement = target.querySelector('svg');
+      svgElement.style.maxWidth = 'none';
+      panZoomInstance = svgPanZoom(svgElement, {
+        zoomEnabled: true,
+        controlIconsEnabled: false,
+        fit: true,
+        center: true,
+        minZoom: 0.25,
+        maxZoom: 5.0,
+        onZoom: function(newScale) {
+          document.getElementById('zoomText').textContent = `${Math.round(newScale * 100)}%`;
+        }
+      });
+
+      document.getElementById('btnZoomIn').addEventListener('click', () => panZoomInstance.zoomIn());
+      document.getElementById('btnZoomOut').addEventListener('click', () => panZoomInstance.zoomOut());
+      document.getElementById('btnFit').addEventListener('click', () => {
+        panZoomInstance.resize();
+        panZoomInstance.fit();
+        panZoomInstance.center();
+      });
+      document.getElementById('btnReset').addEventListener('click', () => {
+        panZoomInstance.reset();
+        panZoomInstance.fit();
+        panZoomInstance.center();
+      });
+
+      document.getElementById('btnCopy').addEventListener('click', () => {
+        navigator.clipboard.writeText(mermaidCode);
+        const btn = document.getElementById('btnCopy');
+        const orig = btn.textContent;
+        btn.textContent = '✓ Copiado';
+        setTimeout(() => btn.textContent = orig, 1500);
+      });
+    }
+
+    window.addEventListener('load', renderDiagram);
+    window.addEventListener('resize', () => {
+      if (panZoomInstance) {
+        panZoomInstance.resize();
+        panZoomInstance.fit();
+        panZoomInstance.center();
+      }
+    });
+    window.addEventListener('keydown', (e) => {
+      if ((e.key === 'm' || e.key === 'M') && window.parent && window.parent !== window && typeof window.parent.toggleSidebar === 'function') {
+        window.parent.toggleSidebar();
+      }
+    });
+  </script>
+</body>
+</html>

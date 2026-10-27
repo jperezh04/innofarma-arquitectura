@@ -1,0 +1,253 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Fig 4.9 - Búsqueda Indexada FEFO (ILA-0002) | Innofarma</title>
+  <script src="https://cdn.jsdelivr.net/npm/mermaid@10/dist/mermaid.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/svg-pan-zoom@3.6.1/dist/svg-pan-zoom.min.js"></script>
+  <style>
+    *, *::before, *::after {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+
+    html, body {
+      width: 100vw;
+      height: 100vh;
+      overflow: hidden;
+      background-color: #f8fafc;
+      color: #0f172a;
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+      user-select: none;
+      -webkit-user-select: none;
+    }
+
+    .hud-bar {
+      position: fixed;
+      top: 12px;
+      right: 16px;
+      z-index: 2000;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      background: #ffffff;
+      border: 1.5px solid #059669;
+      border-radius: 10px;
+      padding: 6px 14px;
+      font-size: 11.5px;
+      box-shadow: 0 4px 12px rgba(5, 150, 105, 0.12);
+    }
+
+    .hud-status-badge {
+      background: #059669;
+      color: #ffffff;
+      font-size: 10px;
+      font-weight: 700;
+      letter-spacing: 0.5px;
+      padding: 4px 8px;
+      border-radius: 6px;
+      text-transform: uppercase;
+      white-space: nowrap;
+    }
+
+    .hud-controls {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+
+    .btn-hud {
+      background: #ffffff;
+      color: #047857;
+      border: 1.5px solid #059669;
+      border-radius: 6px;
+      padding: 5px 10px;
+      font-family: inherit;
+      font-size: 11px;
+      font-weight: 700;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      gap: 4px;
+      transition: all 0.15s ease;
+      white-space: nowrap;
+    }
+
+    .btn-hud:hover {
+      background: #059669;
+      color: #ffffff;
+    }
+
+    .zoom-text {
+      font-weight: 700;
+      min-width: 44px;
+      text-align: center;
+      font-size: 11.5px;
+      color: #047857;
+    }
+
+    .hud-hint {
+      font-size: 10.5px;
+      color: #64748b;
+      margin-right: 6px;
+    }
+
+    #container {
+      width: 100vw;
+      height: 100vh;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      cursor: grab;
+      background: radial-gradient(#d1fae5 1px, transparent 1px);
+      background-size: 24px 24px;
+      background-color: #f8fafc;
+    }
+
+    #container:active {
+      cursor: grabbing;
+    }
+
+    #mermaid-target {
+      width: 100%;
+      height: 100%;
+    }
+
+    #mermaid-target svg {
+      width: 100%;
+      height: 100%;
+    }
+  </style>
+</head>
+<body>
+
+  <header class="hud-bar">
+    <span class="hud-status-badge">ILA-0002: BÚSQUEDA INDEXADA FEFO</span>
+    <span class="hud-hint">Pan: Arrastrar | Zoom: Rueda</span>
+    <div class="hud-controls">
+      <button class="btn-hud" id="btnZoomOut">− Zoom</button>
+      <span class="zoom-text" id="zoomText">100%</span>
+      <button class="btn-hud" id="btnZoomIn">+ Zoom</button>
+      <button class="btn-hud" id="btnFit">Ajustar</button>
+      <button class="btn-hud" id="btnReset">Reset</button>
+      <button class="btn-hud" id="btnCopy">Copiar Código</button>
+    </div>
+  </header>
+
+  <div id="container">
+    <div id="mermaid-target"></div>
+  </div>
+
+  <script>
+    const mermaidCode = `sequenceDiagram
+    autonumber
+    actor Farmaceutico as Químico Farmacéutico / POS
+    participant Controller as InventarioController (Laravel 11)
+    participant Service as FEFOQueryService
+    participant DB as PostgreSQL 16 (Índice Compuesto)
+
+    Note over Farmaceutico,DB: FASE 1: Consulta de Medicamento por Criterio Múltiple
+    Farmaceutico->>Controller: GET /api/v1/inventario/lotes?producto_id=312&id_local=1&modo=FEFO
+    Controller->>Service: consultarLotesDisponibles(productoId: 312, localId: 1)
+
+    Note over Service,DB: FASE 2: Ejecución de Query Optimizada con Índice B-Tree
+    Note right of DB: Índice Compuesto en PostgreSQL 16:<br/>CREATE INDEX idx_lotes_fefo ON lotes_producto<br/>(id_local, producto_id, fecha_vencimiento ASC)<br/>WHERE estado = 'ACTIVO' AND cantidad > 0;
+    Service->>DB: EXPLAIN ANALYZE SELECT id_lote, numero_lote, fecha_vencimiento, cantidad, precio_fraccionado FROM lotes_producto WHERE id_local = 1 AND producto_id = 312 AND estado = 'ACTIVO' ORDER BY fecha_vencimiento ASC
+    DB-->>Service: Index Scan en idx_lotes_fefo (Tiempo de ejecución < 1.8 ms)
+    
+    Note over Service,DB: FASE 3: Clasificación de Lotes por Umbral de Vencimiento
+    Service->>Service: Evalúa semáforo sanitario de lotes recuperados:
+    Note over Service: 1. Lote L-2026-08: Vence en 45 días -> Estado: DESPACHO PRIORITARIO (FEFO)<br/>2. Lote L-2026-12: Vence en 180 días -> Estado: STOCK EN ESPERA<br/>3. Lote L-2027-03: Vence en 300 días -> Estado: RESERVA
+    
+    Service-->>Controller: Retorna DTO con Lista Ordenada de Lotes FEFO + Badge Prioritario
+    Controller-->>Farmaceutico: HTTP 200 OK {status: "SUCCESS", lotes_ordenados, sugerido_despacho: "L-2026-08"}
+    Farmaceutico->>Farmaceutico: Muestra en pantalla de ventas el lote sugerido para evitar mermas`;
+
+    mermaid.initialize({
+      startOnLoad: false,
+      theme: 'base',
+      themeVariables: {
+        fontFamily: 'Segoe UI, Arial, sans-serif',
+        fontSize: '13px',
+        primaryColor: '#d1fae5',
+        primaryTextColor: '#064e3b',
+        primaryBorderColor: '#059669',
+        lineColor: '#047857',
+        secondaryColor: '#ecfdf5',
+        tertiaryColor: '#f0fdf4',
+        noteBkgColor: '#f0fdf4',
+        noteTextColor: '#047857',
+        noteBorderColor: '#10b981',
+        actorBkg: '#059669',
+        actorTextColor: '#ffffff',
+        actorBorder: '#047857',
+        actorLineColor: '#059669',
+        signalColor: '#047857',
+        signalTextColor: '#064e3b',
+        labelBoxBkgColor: '#d1fae5',
+        labelBoxBorderColor: '#059669',
+        labelTextColor: '#047857'
+      }
+    });
+
+    let panZoomInstance = null;
+
+    async function renderDiagram() {
+      const target = document.getElementById('mermaid-target');
+      const { svg } = await mermaid.render('mermaid-svg-49', mermaidCode);
+      target.innerHTML = svg;
+
+      const svgElement = target.querySelector('svg');
+      svgElement.style.maxWidth = 'none';
+      panZoomInstance = svgPanZoom(svgElement, {
+        zoomEnabled: true,
+        controlIconsEnabled: false,
+        fit: true,
+        center: true,
+        minZoom: 0.3,
+        maxZoom: 5.0,
+        onZoom: function(newScale) {
+          document.getElementById('zoomText').textContent = `${Math.round(newScale * 100)}%`;
+        }
+      });
+
+      document.getElementById('btnZoomIn').addEventListener('click', () => panZoomInstance.zoomIn());
+      document.getElementById('btnZoomOut').addEventListener('click', () => panZoomInstance.zoomOut());
+      document.getElementById('btnFit').addEventListener('click', () => {
+        panZoomInstance.resize();
+        panZoomInstance.fit();
+        panZoomInstance.center();
+      });
+      document.getElementById('btnReset').addEventListener('click', () => {
+        panZoomInstance.reset();
+        panZoomInstance.fit();
+        panZoomInstance.center();
+      });
+
+      document.getElementById('btnCopy').addEventListener('click', () => {
+        navigator.clipboard.writeText(mermaidCode);
+        const btn = document.getElementById('btnCopy');
+        const orig = btn.textContent;
+        btn.textContent = '✓ Copiado';
+        setTimeout(() => btn.textContent = orig, 1500);
+      });
+    }
+
+    window.addEventListener('load', renderDiagram);
+    window.addEventListener('resize', () => {
+      if (panZoomInstance) {
+        panZoomInstance.resize();
+        panZoomInstance.fit();
+        panZoomInstance.center();
+      }
+    });
+    window.addEventListener('keydown', (e) => {
+      if ((e.key === 'm' || e.key === 'M') && window.parent && window.parent !== window && typeof window.parent.toggleSidebar === 'function') {
+        window.parent.toggleSidebar();
+      }
+    });
+  </script>
+</body>
+</html>

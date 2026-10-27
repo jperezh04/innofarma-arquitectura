@@ -1,0 +1,837 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Vista Lógica V01.00 — Módulos EDU | Innofarma</title>
+  <script src="https://cdn.jsdelivr.net/npm/svg-pan-zoom@3.6.1/dist/svg-pan-zoom.min.js"></script>
+  <style>
+    *, *::before, *::after {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+
+    html, body {
+      width: 100vw;
+      height: 100vh;
+      overflow: hidden;
+      background-color: #f8fafc;
+      color: #0f172a;
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+      user-select: none;
+      -webkit-user-select: none;
+    }
+
+    /* BARRA DE CONTROL FLOTANTE (ESTILO MARIFARMA SALUD) */
+    .hud-bar {
+      position: fixed;
+      top: 12px;
+      right: 16px;
+      z-index: 2000;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      background: rgba(255, 255, 255, 0.96);
+      backdrop-filter: blur(8px);
+      border: 1.5px solid #059669;
+      border-radius: 10px;
+      padding: 6px 12px;
+      font-size: 11.5px;
+      box-shadow: 0 4px 14px rgba(5, 150, 105, 0.14);
+      max-width: calc(100vw - 32px);
+      flex-wrap: wrap;
+    }
+
+    .hud-status-badge {
+      background: #059669;
+      color: #ffffff;
+      font-size: 10px;
+      font-weight: 700;
+      letter-spacing: 0.5px;
+      padding: 4px 8px;
+      border-radius: 6px;
+      text-transform: uppercase;
+      white-space: nowrap;
+    }
+
+    .hud-controls {
+      display: flex;
+      align-items: center;
+      gap: 5px;
+      flex-wrap: wrap;
+    }
+
+    .btn-hud {
+      background: #ffffff;
+      color: #047857;
+      border: 1.5px solid #059669;
+      border-radius: 6px;
+      padding: 5px 9px;
+      font-family: inherit;
+      font-size: 11px;
+      font-weight: 700;
+      cursor: pointer;
+      display: inline-flex;
+      align-items: center;
+      gap: 4px;
+      transition: all 0.15s ease;
+      white-space: nowrap;
+    }
+
+    .btn-hud:hover {
+      background: #059669;
+      color: #ffffff;
+    }
+
+    .zoom-text {
+      font-weight: 700;
+      min-width: 44px;
+      text-align: center;
+      font-size: 11.5px;
+      color: #047857;
+    }
+
+    .hud-hint {
+      font-size: 10.5px;
+      color: #64748b;
+      margin-right: 4px;
+      white-space: nowrap;
+    }
+
+    /* LEYENDA SEMÁNTICA FLOTANTE INFERIOR */
+    .legend-bar {
+      position: fixed;
+      bottom: 12px;
+      left: 16px;
+      z-index: 1500;
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      flex-wrap: wrap;
+      background: rgba(255, 255, 255, 0.96);
+      backdrop-filter: blur(8px);
+      border: 1px solid #cbd5e1;
+      border-radius: 9px;
+      padding: 6px 12px;
+      font-size: 10.5px;
+      color: #334155;
+      box-shadow: 0 3px 10px rgba(15, 23, 42, 0.08);
+    }
+
+    .legend-item {
+      display: inline-flex;
+      align-items: center;
+      gap: 5px;
+      font-weight: 600;
+    }
+
+    .legend-dot {
+      width: 11px;
+      height: 11px;
+      border-radius: 3px;
+      display: inline-block;
+    }
+
+    #container {
+      width: 100vw;
+      height: 100vh;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      background: radial-gradient(#a7f3d0 1.1px, transparent 1.1px);
+      background-size: 24px 24px;
+      background-color: #f8fafc;
+      cursor: grab;
+    }
+
+    #container:active {
+      cursor: grabbing;
+    }
+
+    #logica-svg {
+      width: 100%;
+      height: 100%;
+      display: block;
+    }
+
+    /* Interactividad sutil al pasar el cursor por las clases EDU */
+    .uml-class {
+      cursor: pointer;
+      transition: opacity 0.18s ease, filter 0.18s ease;
+    }
+
+    .uml-edge {
+      transition: opacity 0.18s ease, stroke-width 0.18s ease;
+    }
+
+    svg.has-focus .uml-class:not(.focused) {
+      opacity: 0.32;
+    }
+
+    svg.has-focus .uml-edge:not(.focused) {
+      opacity: 0.16;
+    }
+
+    svg.has-focus .uml-edge.focused path.edge-line {
+      stroke-width: 2.8px;
+      stroke: #0f766e;
+    }
+
+    svg.has-focus .uml-class.focused {
+      filter: drop-shadow(0 6px 14px rgba(15, 118, 110, 0.22));
+    }
+
+    @media (max-width: 768px) {
+      .hud-hint, .legend-bar { display: none; }
+    }
+  </style>
+</head>
+<body>
+
+  <!-- BARRA DE CONTROL FLOTANTE (HUD) -->
+  <header class="hud-bar">
+    <span class="hud-status-badge">VISTA LÓGICA V01.00</span>
+    <span class="hud-hint">Pasa el cursor sobre un EDU para resaltar sus relaciones | Rueda: Zoom</span>
+    <div class="hud-controls">
+      <button class="btn-hud" id="btnZoomOut">− Zoom</button>
+      <span class="zoom-text" id="zoomText">100%</span>
+      <button class="btn-hud" id="btnZoomIn">+ Zoom</button>
+      <button class="btn-hud" id="btnFit">Ajustar</button>
+      <button class="btn-hud" id="btnReset">Reset</button>
+      <button class="btn-hud" id="btnSvg">Descargar SVG</button>
+      <button class="btn-hud" id="btnCopy">Copiar Código Mermaid</button>
+    </div>
+  </header>
+
+  <!-- LEYENDA SEMÁNTICA MARIFARMA SALUD -->
+  <div class="legend-bar">
+    <strong style="color:#0f172a;">Dominios Lógicos (Marifarma Salud):</strong>
+    <span class="legend-item"><span class="legend-dot" style="background:#ccfbf1;border:1.5px solid #0d9488;"></span>Operaciones (Ventas / Compras)</span>
+    <span class="legend-item"><span class="legend-dot" style="background:#d1fae5;border:1.5px solid #059669;"></span>Farmacia, Inventario, Catálogo y Turnos</span>
+    <span class="legend-item"><span class="legend-dot" style="background:#fef3c7;border:1.5px solid #d97706;"></span>Caja y Finanzas</span>
+    <span class="legend-item"><span class="legend-dot" style="background:#e0e7ff;border:1.5px solid #4338ca;"></span>Seguridad RBAC, Reportes y POE</span>
+    <span class="legend-item" style="margin-left:6px;color:#475569;">── Asociación directa &nbsp;|&nbsp; - - -&gt; Dependencia</span>
+  </div>
+
+  <div id="container">
+    <svg id="logica-svg" viewBox="0 0 2300 1290" xmlns="http://www.w3.org/2000/svg">
+      <defs>
+        <marker id="uml-arrow" viewBox="0 0 12 12" refX="10.5" refY="6" markerWidth="9" markerHeight="9" orient="auto-start-reverse">
+          <path d="M 1.5 1.5 L 10.5 6 L 1.5 10.5" fill="none" stroke="#334155" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" />
+        </marker>
+        <filter id="card-shadow" x="-5%" y="-5%" width="110%" height="114%">
+          <feDropShadow dx="0" dy="3" stdDeviation="4" flood-color="#0f172a" flood-opacity="0.07" />
+        </filter>
+      </defs>
+
+      <!-- CAPA 1: ARISTAS Y RELACIONES ORTOGONALES (16 RELACIONES OFICIALES) -->
+      <g id="edges-layer"></g>
+
+      <!-- CAPA 2: CLASES UML (EDU-0002 A EDU-0013) Y NOTA DE ALCANCE -->
+      <g id="nodes-layer"></g>
+    </svg>
+  </div>
+
+  <script>
+    // Código Mermaid equivalente 1:1 para el botón "Copiar Código Mermaid"
+    const mermaidCode = `classDiagram
+    class EDU_0002 {
+        <<EDU-0002>>
+        Gestión de inventario
+        - stockDisponible
+        - presentacion
+        - lote
+        - fechaVencimiento
+        + ingresarStock()
+        + ajustarStock()
+        + consultarStock()
+    }
+
+    class EDU_0004 {
+        <<EDU-0004>>
+        Gestión de ventas
+        - codigoVenta
+        - fecha
+        - total
+        + registrarVenta()
+        + consultarHistorial()
+        + anularVenta()
+    }
+
+    class EDU_0005 {
+        <<EDU-0005>>
+        Gestión de productos comerciales
+        - codigoProducto
+        - nombre
+        - marca
+        - categoria
+        + registrarProducto()
+        + consultarProducto()
+        + actualizarProducto()
+        + desactivarProducto()
+    }
+
+    class EDU_0008 {
+        <<EDU-0008>>
+        Gestión de medicamentos
+        - codigoMedicamento
+        - nombreComercial
+        - principioActivo
+        - concentracion
+        + registrarMedicamento()
+        + consultarMedicamento()
+        + actualizarMedicamento()
+        + desactivarMedicamento()
+    }
+
+    class EDU_0007 {
+        <<EDU-0007>>
+        Gestión de compras de medicamentos
+        - codigoCompra
+        - fechaCompra
+        - comprobante
+        + registrarCompra()
+        + consultarCompras()
+        + anularCompra()
+    }
+
+    class EDU_0006 {
+        <<EDU-0006>>
+        Gestión de accesos
+        - usuario
+        - credenciales
+        - rol
+        + iniciarSesion()
+        + validarPermisos()
+        + cerrarSesion()
+    }
+
+    class EDU_0009 {
+        <<EDU-0009>>
+        Gestión de proveedores
+        - codigoProveedor
+        - nombre
+        - RUC
+        - telefono
+        + registrarProveedor()
+        + consultarProveedor()
+        + actualizarProveedor()
+        + desactivarProveedor()
+    }
+
+    class EDU_0011 {
+        <<EDU-0011>>
+        Gestión de caja
+        - codigoTurno
+        - montoInicial
+        - montoEsperado
+        - estadoSesion
+        + abrirCaja()
+        + consultarMovimientos()
+        + cuadrarCaja()
+        + anularMovimiento()
+    }
+
+    class EDU_0010 {
+        <<EDU-0010>>
+        Gestión de reportes
+        - tipoReporte
+        - periodo
+        - filtros
+        + generarReporte()
+        + consultarReporte()
+        + actualizarReporte()
+    }
+
+    class EDU_0012 {
+        <<EDU-0012>>
+        Gestión del cumplimiento de POE
+        - tipoControl
+        - resultado
+        - observacion
+        - estado
+        + registrarControl()
+        + consultarRegistros()
+        + actualizarControl()
+        + anularRegistro()
+    }
+
+    class EDU_0013 {
+        <<EDU-0013>>
+        Gestión de turnos y asignaciones de personal
+        - codigoTurno
+        - horario
+        - estado
+        + programarTurno()
+        + asignarCajera()
+        + actualizarTurno()
+        + desactivarTurno()
+    }
+
+    note "Nota de alcance: Los roles principales son Administrador y Cajera. Productos y medicamentos definen datos; inventario administra cantidades."
+
+    EDU_0008 ..> EDU_0002 : proporciona medicamentos
+    EDU_0005 ..> EDU_0002 : proporciona productos
+    EDU_0004 ..> EDU_0002 : descuenta stock
+    EDU_0007 --> EDU_0002 : incrementa stock
+    EDU_0006 --> EDU_0004 : controla permisos
+    EDU_0004 ..> EDU_0011 : registra ventas por turno
+    EDU_0013 ..> EDU_0011 : planifica turnos
+    EDU_0009 --> EDU_0007 : proporciona proveedor
+    EDU_0009 ..> EDU_0012 : proveedores calificados
+    EDU_0007 ..> EDU_0012 : controles de compras
+    EDU_0002 --> EDU_0012 : proporciona datos de control
+    EDU_0005 --> EDU_0012 : proporciona datos de productos
+    EDU_0008 --> EDU_0012 : proporciona datos sanitarios
+    EDU_0007 --> EDU_0010 : proporciona datos de compras
+    EDU_0002 --> EDU_0010 : proporciona existencias
+    EDU_0004 ..> EDU_0010 : proporciona datos de ventas`;
+
+    // Paleta semántica Marifarma Salud
+    const THEMES = {
+      operaciones: { headerBg: '#ccfbf1', bodyBg: '#f0fdfa', stroke: '#0d9488', titleColor: '#0f172a', codeColor: '#0f766e' },
+      farmacia:    { headerBg: '#d1fae5', bodyBg: '#ecfdf5', stroke: '#059669', titleColor: '#064e3b', codeColor: '#047857' },
+      caja:        { headerBg: '#fef3c7', bodyBg: '#fffbeb', stroke: '#d97706', titleColor: '#78350f', codeColor: '#b45309' },
+      control:     { headerBg: '#e0e7ff', bodyBg: '#eef2ff', stroke: '#4338ca', titleColor: '#1e1b4b', codeColor: '#3730a3' },
+      nota:        { headerBg: '#fef08a', bodyBg: '#fefce8', stroke: '#ca8a04', titleColor: '#713f12', codeColor: '#854d0e' }
+    };
+
+    // Cuadrícula 4 columnas × 3 filas idéntica al PDF oficial
+    // Col 1: x=250..590 | Col 2: x=800..1140 | Col 3: x=1350..1690 | Col 4: x=1900..2240
+    // Row 1: y=130..360 | Row 2: y=520..750  | Row 3: y=950..1180
+    const CLASSES = [
+      // FILA 1
+      {
+        id: 'EDU-0002', code: 'EDU-0002', name: 'Gestión de inventario',
+        x: 250, y: 130, w: 340, h: 230, theme: 'farmacia',
+        attrs: ['- stockDisponible', '- presentacion', '- lote', '- fechaVencimiento'],
+        methods: ['+ ingresarStock()', '+ ajustarStock()', '+ consultarStock()']
+      },
+      {
+        id: 'EDU-0004', code: 'EDU-0004', name: 'Gestión de ventas',
+        x: 800, y: 130, w: 340, h: 230, theme: 'operaciones',
+        attrs: ['- codigoVenta', '- fecha', '- total'],
+        methods: ['+ registrarVenta()', '+ consultarHistorial()', '+ anularVenta()']
+      },
+      {
+        id: 'EDU-0005', code: 'EDU-0005', name: 'Gestión de productos comerciales',
+        x: 1350, y: 130, w: 340, h: 230, theme: 'farmacia',
+        attrs: ['- codigoProducto', '- nombre', '- marca', '- categoria'],
+        methods: ['+ registrarProducto()', '+ consultarProducto()', '+ actualizarProducto()', '+ desactivarProducto()']
+      },
+      {
+        id: 'EDU-0008', code: 'EDU-0008', name: 'Gestión de medicamentos',
+        x: 1900, y: 130, w: 340, h: 230, theme: 'farmacia',
+        attrs: ['- codigoMedicamento', '- nombreComercial', '- principioActivo', '- concentracion'],
+        methods: ['+ registrarMedicamento()', '+ consultarMedicamento()', '+ actualizarMedicamento()', '+ desactivarMedicamento()']
+      },
+
+      // FILA 2
+      {
+        id: 'EDU-0007', code: 'EDU-0007', name: 'Gestión de compras de medicamentos',
+        x: 250, y: 520, w: 340, h: 230, theme: 'operaciones',
+        attrs: ['- codigoCompra', '- fechaCompra', '- comprobante'],
+        methods: ['+ registrarCompra()', '+ consultarCompras()', '+ anularCompra()']
+      },
+      {
+        id: 'EDU-0006', code: 'EDU-0006', name: 'Gestión de accesos',
+        x: 800, y: 520, w: 340, h: 230, theme: 'control',
+        attrs: ['- usuario', '- credenciales', '- rol'],
+        methods: ['+ iniciarSesion()', '+ validarPermisos()', '+ cerrarSesion()']
+      },
+      {
+        id: 'EDU-0009', code: 'EDU-0009', name: 'Gestión de proveedores',
+        x: 1350, y: 520, w: 340, h: 230, theme: 'farmacia',
+        attrs: ['- codigoProveedor', '- nombre', '- RUC', '- telefono'],
+        methods: ['+ registrarProveedor()', '+ consultarProveedor()', '+ actualizarProveedor()', '+ desactivarProveedor()']
+      },
+      {
+        id: 'EDU-0011', code: 'EDU-0011', name: 'Gestión de caja',
+        x: 1900, y: 520, w: 340, h: 230, theme: 'caja',
+        attrs: ['- codigoTurno', '- montoInicial', '- montoEsperado', '- estadoSesion'],
+        methods: ['+ abrirCaja()', '+ consultarMovimientos()', '+ cuadrarCaja()', '+ anularMovimiento()']
+      },
+
+      // FILA 3
+      {
+        id: 'EDU-0010', code: 'EDU-0010', name: 'Gestión de reportes',
+        x: 250, y: 950, w: 340, h: 230, theme: 'control',
+        attrs: ['- tipoReporte', '- periodo', '- filtros'],
+        methods: ['+ generarReporte()', '+ consultarReporte()', '+ actualizarReporte()']
+      },
+      {
+        id: 'EDU-0012', code: 'EDU-0012', name: 'Gestión del cumplimiento de POE',
+        x: 800, y: 950, w: 340, h: 230, theme: 'control',
+        attrs: ['- tipoControl', '- resultado', '- observacion', '- estado'],
+        methods: ['+ registrarControl()', '+ consultarRegistros()', '+ actualizarControl()', '+ anularRegistro()']
+      },
+      {
+        id: 'EDU-0013', code: 'EDU-0013', name: 'Gestión de turnos y asignaciones de personal',
+        x: 1350, y: 950, w: 340, h: 230, theme: 'farmacia',
+        attrs: ['- codigoTurno', '- horario', '- estado'],
+        methods: ['+ programarTurno()', '+ asignarCajera()', '+ actualizarTurno()', '+ desactivarTurno()']
+      },
+      {
+        id: 'NOTA', code: '', name: 'Nota de alcance',
+        x: 1900, y: 950, w: 340, h: 175, theme: 'nota', isNote: true,
+        noteLines: [
+          'Los roles principales son Administrador y Cajera.',
+          'Productos y medicamentos definen datos; inventario',
+          'administra cantidades.'
+        ]
+      }
+    ];
+
+    // Las 16 relaciones exactas del documento oficial con ruteo ortogonal libre de colisiones
+    const EDGES = [
+      // 1. EDU-0008 -.-> EDU-0002 : proporciona medicamentos
+      { from: 'EDU-0008', to: 'EDU-0002', dashed: true, label: 'proporciona medicamentos', lx: 1265, ly: 66,
+        pts: [[2070, 130], [2070, 66], [460, 66], [460, 130]] },
+      // 2. EDU-0005 -.-> EDU-0002 : proporciona productos
+      { from: 'EDU-0005', to: 'EDU-0002', dashed: true, label: 'proporciona productos', lx: 950, ly: 98,
+        pts: [[1520, 130], [1520, 98], [380, 98], [380, 130]] },
+      // 3. EDU-0004 -.-> EDU-0002 : descuenta stock
+      { from: 'EDU-0004', to: 'EDU-0002', dashed: true, label: 'descuenta stock', lx: 695, ly: 185,
+        pts: [[800, 185], [590, 185]] },
+      // 4. EDU-0007 --> EDU-0002 : incrementa stock
+      { from: 'EDU-0007', to: 'EDU-0002', dashed: false, label: 'incrementa stock', lx: 420, ly: 440,
+        pts: [[420, 520], [420, 360]] },
+      // 5. EDU-0006 --> EDU-0004 : controla permisos
+      { from: 'EDU-0006', to: 'EDU-0004', dashed: false, label: 'controla permisos', lx: 970, ly: 440,
+        pts: [[970, 520], [970, 360]] },
+      // 6. EDU-0004 -.-> EDU-0011 : registra ventas por turno
+      { from: 'EDU-0004', to: 'EDU-0011', dashed: true, label: 'registra ventas por turno', lx: 1565, ly: 440,
+        pts: [[1060, 360], [1060, 440], [2070, 440], [2070, 520]] },
+      // 7. EDU-0013 -.-> EDU-0011 : planifica turnos
+      { from: 'EDU-0013', to: 'EDU-0011', dashed: true, label: 'planifica turnos', lx: 1830, ly: 900,
+        pts: [[1520, 950], [1520, 900], [2070, 900], [2070, 750]] },
+      // 8. EDU-0009 --> EDU-0007 : proporciona proveedor
+      { from: 'EDU-0009', to: 'EDU-0007', dashed: false, label: 'proporciona proveedor', lx: 970, ly: 795,
+        pts: [[1450, 750], [1450, 795], [490, 795], [490, 750]] },
+      // 9. EDU-0009 -.-> EDU-0012 : proveedores calificados
+      { from: 'EDU-0009', to: 'EDU-0012', dashed: true, label: 'proveedores calificados', lx: 1310, ly: 845,
+        pts: [[1590, 750], [1590, 845], [1030, 845], [1030, 950]] },
+      // 10. EDU-0007 -.-> EDU-0012 : controles de compras
+      { from: 'EDU-0007', to: 'EDU-0012', dashed: true, label: 'controles de compras', lx: 665, ly: 845,
+        pts: [[420, 750], [420, 845], [910, 845], [910, 950]] },
+      // 11. EDU-0002 --> EDU-0012 : proporciona datos de control
+      { from: 'EDU-0002', to: 'EDU-0012', dashed: false, label: 'proporciona datos de control', lx: 695, ly: 665,
+        pts: [[590, 275], [695, 275], [695, 1055], [800, 1055]] },
+      // 12. EDU-0005 --> EDU-0012 : proporciona datos de productos
+      { from: 'EDU-0005', to: 'EDU-0012', dashed: false, label: 'proporciona datos de productos', lx: 1245, ly: 665,
+        pts: [[1350, 275], [1245, 275], [1245, 1055], [1140, 1055]] },
+      // 13. EDU-0008 --> EDU-0012 : proporciona datos sanitarios
+      { from: 'EDU-0008', to: 'EDU-0012', dashed: false, label: 'proporciona datos sanitarios', lx: 1795, ly: 1025,
+        pts: [[1900, 275], [1795, 275], [1795, 1235], [970, 1235], [970, 1180]] },
+      // 14. EDU-0007 --> EDU-0010 : proporciona datos de compras
+      { from: 'EDU-0007', to: 'EDU-0010', dashed: false, label: 'proporciona datos de compras', lx: 335, ly: 892,
+        pts: [[335, 750], [335, 950]] },
+      // 15. EDU-0002 --> EDU-0010 : proporciona existencias
+      { from: 'EDU-0002', to: 'EDU-0010', dashed: false, label: 'proporciona existencias', lx: 155, ly: 635,
+        pts: [[250, 245], [155, 245], [155, 1035], [250, 1035]] },
+      // 16. EDU-0004 -.-> EDU-0010 : proporciona datos de ventas
+      { from: 'EDU-0004', to: 'EDU-0010', dashed: true, label: 'proporciona datos de ventas', lx: 105, ly: 390,
+        pts: [[890, 130], [890, 32], [65, 32], [65, 1105], [250, 1105]] }
+    ];
+
+    const NS = 'http://www.w3.org/2000/svg';
+    function el(tag, attrs = {}, text = null) {
+      const node = document.createElementNS(NS, tag);
+      for (const [k, v] of Object.entries(attrs)) {
+        node.setAttribute(k, v);
+      }
+      if (text !== null) node.textContent = text;
+      return node;
+    }
+
+    function buildRoundedOrthogonalPath(pts, radius = 8) {
+      if (pts.length < 2) return '';
+      let d = `M ${pts[0][0]} ${pts[0][1]}`;
+      for (let i = 1; i < pts.length - 1; i++) {
+        const [x0, y0] = pts[i - 1];
+        const [x1, y1] = pts[i];
+        const [x2, y2] = pts[i + 1];
+        const dx1 = x1 - x0, dy1 = y1 - y0;
+        const dx2 = x2 - x1, dy2 = y2 - y1;
+        const len1 = Math.hypot(dx1, dy1);
+        const len2 = Math.hypot(dx2, dy2);
+        const r = Math.min(radius, len1 / 2, len2 / 2);
+        const sx = x1 - (dx1 / len1) * r;
+        const sy = y1 - (dy1 / len1) * r;
+        const ex = x1 + (dx2 / len2) * r;
+        const ey = y1 + (dy2 / len2) * r;
+        d += ` L ${sx} ${sy} Q ${x1} ${y1} ${ex} ${ey}`;
+      }
+      const last = pts[pts.length - 1];
+      d += ` L ${last[0]} ${last[1]}`;
+      return d;
+    }
+
+    function renderLogicalView() {
+      const svgRoot = document.getElementById('logica-svg');
+      const edgesLayer = document.getElementById('edges-layer');
+      const nodesLayer = document.getElementById('nodes-layer');
+
+      // 1. Renderizar las 16 relaciones ortogonales
+      EDGES.forEach((edge, idx) => {
+        const g = el('g', {
+          class: 'uml-edge',
+          'data-from': edge.from,
+          'data-to': edge.to
+        });
+
+        const pathAttrs = {
+          class: 'edge-line',
+          d: buildRoundedOrthogonalPath(edge.pts, 7),
+          fill: 'none',
+          stroke: '#334155',
+          'stroke-width': '1.75',
+          'marker-end': 'url(#uml-arrow)'
+        };
+        if (edge.dashed) {
+          pathAttrs['stroke-dasharray'] = '6,4';
+        }
+        g.appendChild(el('path', pathAttrs));
+
+        // Etiqueta con pastilla blanca nítida
+        const pillW = Math.max(96, edge.label.length * 6.9 + 18);
+        const pillH = 22;
+        g.appendChild(el('rect', {
+          x: edge.lx - pillW / 2,
+          y: edge.ly - pillH / 2,
+          width: pillW,
+          height: pillH,
+          rx: 5,
+          fill: '#ffffff',
+          stroke: '#cbd5e1',
+          'stroke-width': '1'
+        }));
+        g.appendChild(el('text', {
+          x: edge.lx,
+          y: edge.ly + 4,
+          'text-anchor': 'middle',
+          'font-size': '11.5',
+          'font-weight': '700',
+          fill: '#0f172a',
+          'font-family': 'Segoe UI, Arial, sans-serif'
+        }, edge.label));
+
+        edgesLayer.appendChild(g);
+      });
+
+      // 2. Renderizar las 11 clases UML + Nota de alcance
+      CLASSES.forEach((cls) => {
+        const t = THEMES[cls.theme];
+        const g = el('g', {
+          class: 'uml-class',
+          'data-id': cls.id,
+          filter: 'url(#card-shadow)'
+        });
+
+        // Contenedor base redondeado
+        g.appendChild(el('rect', {
+          x: cls.x,
+          y: cls.y,
+          width: cls.w,
+          height: cls.h,
+          rx: 8,
+          fill: t.bodyBg,
+          stroke: t.stroke,
+          'stroke-width': '2'
+        }));
+
+        const headerH = cls.isNote ? 38 : 48;
+
+        // Cabecera superior coloreada con esquinas superiores redondeadas
+        const hdrPath = `M ${cls.x + 8} ${cls.y} H ${cls.x + cls.w - 8} Q ${cls.x + cls.w} ${cls.y} ${cls.x + cls.w} ${cls.y + 8} V ${cls.y + headerH} H ${cls.x} V ${cls.y + 8} Q ${cls.x} ${cls.y} ${cls.x + 8} ${cls.y} Z`;
+        g.appendChild(el('path', {
+          d: hdrPath,
+          fill: t.headerBg,
+          stroke: t.stroke,
+          'stroke-width': '2'
+        }));
+
+        if (cls.isNote) {
+          g.appendChild(el('text', {
+            x: cls.x + cls.w / 2,
+            y: cls.y + 24,
+            'text-anchor': 'middle',
+            'font-size': '13',
+            'font-weight': '800',
+            fill: t.titleColor
+          }, cls.name));
+
+          cls.noteLines.forEach((line, i) => {
+            g.appendChild(el('text', {
+              x: cls.x + 14,
+              y: cls.y + headerH + 26 + i * 20,
+              'font-size': '12',
+              'font-weight': '500',
+              fill: '#422006'
+            }, line));
+          });
+
+          // Línea divisoria inferior idéntica al formato del documento oficial
+          g.appendChild(el('line', {
+            x1: cls.x, y1: cls.y + cls.h - 34,
+            x2: cls.x + cls.w, y2: cls.y + cls.h - 34,
+            stroke: t.stroke, 'stroke-width': '1.4'
+          }));
+        } else {
+          // Código EDU-XXXX + Nombre del módulo
+          g.appendChild(el('text', {
+            x: cls.x + cls.w / 2,
+            y: cls.y + 19,
+            'text-anchor': 'middle',
+            'font-size': '12',
+            'font-weight': '800',
+            fill: t.codeColor
+          }, cls.code));
+
+          g.appendChild(el('text', {
+            x: cls.x + cls.w / 2,
+            y: cls.y + 38,
+            'text-anchor': 'middle',
+            'font-size': '12.5',
+            'font-weight': '800',
+            fill: t.titleColor
+          }, cls.name));
+
+          const attrH = 88;
+          const divY = cls.y + headerH + attrH;
+
+          // Atributos (-)
+          cls.attrs.forEach((attr, i) => {
+            g.appendChild(el('text', {
+              x: cls.x + 14,
+              y: cls.y + headerH + 21 + i * 19,
+              'font-size': '12',
+              'font-family': 'Consolas, "SFMono-Regular", Menlo, monospace',
+              fill: '#1e293b'
+            }, attr));
+          });
+
+          // Separador entre atributos y métodos
+          g.appendChild(el('line', {
+            x1: cls.x,
+            y1: divY,
+            x2: cls.x + cls.w,
+            y2: divY,
+            stroke: t.stroke,
+            'stroke-width': '1.5'
+          }));
+
+          // Métodos (+)
+          cls.methods.forEach((method, i) => {
+            g.appendChild(el('text', {
+              x: cls.x + 14,
+              y: divY + 21 + i * 19,
+              'font-size': '12',
+              'font-family': 'Consolas, "SFMono-Regular", Menlo, monospace',
+              'font-weight': '600',
+              fill: '#0f172a'
+            }, method));
+          });
+
+          // Interactividad de foco relacional al pasar el cursor
+          g.addEventListener('mouseenter', () => {
+            svgRoot.classList.add('has-focus');
+            const connectedClasses = new Set([cls.id]);
+            document.querySelectorAll('.uml-edge').forEach(edgeEl => {
+              const from = edgeEl.getAttribute('data-from');
+              const to = edgeEl.getAttribute('data-to');
+              if (from === cls.id || to === cls.id) {
+                edgeEl.classList.add('focused');
+                connectedClasses.add(from);
+                connectedClasses.add(to);
+              } else {
+                edgeEl.classList.remove('focused');
+              }
+            });
+            document.querySelectorAll('.uml-class').forEach(clsEl => {
+              if (connectedClasses.has(clsEl.getAttribute('data-id')) || clsEl.getAttribute('data-id') === 'NOTA') {
+                clsEl.classList.add('focused');
+              } else {
+                clsEl.classList.remove('focused');
+              }
+            });
+          });
+
+          g.addEventListener('mouseleave', () => {
+            svgRoot.classList.remove('has-focus');
+            document.querySelectorAll('.focused').forEach(el => el.classList.remove('focused'));
+          });
+        }
+
+        nodesLayer.appendChild(g);
+      });
+    }
+
+    let panZoomInstance = null;
+
+    window.addEventListener('load', () => {
+      renderLogicalView();
+      const svgElement = document.getElementById('logica-svg');
+
+      panZoomInstance = svgPanZoom(svgElement, {
+        zoomEnabled: true,
+        controlIconsEnabled: false,
+        fit: true,
+        center: true,
+        minZoom: 0.25,
+        maxZoom: 5.0,
+        onZoom: function(newScale) {
+          document.getElementById('zoomText').textContent = `${Math.round(newScale * 100)}%`;
+        }
+      });
+
+      document.getElementById('btnZoomIn').addEventListener('click', () => panZoomInstance.zoomIn());
+      document.getElementById('btnZoomOut').addEventListener('click', () => panZoomInstance.zoomOut());
+      document.getElementById('btnFit').addEventListener('click', () => {
+        panZoomInstance.resize();
+        panZoomInstance.fit();
+        panZoomInstance.center();
+      });
+      document.getElementById('btnReset').addEventListener('click', () => {
+        panZoomInstance.reset();
+        panZoomInstance.fit();
+        panZoomInstance.center();
+      });
+
+      document.getElementById('btnSvg').addEventListener('click', () => {
+        const serializer = new XMLSerializer();
+        const svgBlob = new Blob([serializer.serializeToString(svgElement)], { type: 'image/svg+xml;charset=utf-8' });
+        const url = URL.createObjectURL(svgBlob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = 'Vista_Logica_Innofarma_V01.00.svg';
+        a.click();
+        URL.revokeObjectURL(url);
+      });
+
+      document.getElementById('btnCopy').addEventListener('click', () => {
+        navigator.clipboard.writeText(mermaidCode);
+        const btn = document.getElementById('btnCopy');
+        const orig = btn.textContent;
+        btn.textContent = '✓ Código Copiado';
+        setTimeout(() => btn.textContent = orig, 1500);
+      });
+    });
+
+    window.addEventListener('resize', () => {
+      if (panZoomInstance) {
+        panZoomInstance.resize();
+        panZoomInstance.fit();
+        panZoomInstance.center();
+      }
+    });
+
+    window.addEventListener('keydown', (e) => {
+      if ((e.key === 'm' || e.key === 'M') && window.parent && window.parent !== window && typeof window.parent.toggleSidebar === 'function') {
+        window.parent.toggleSidebar();
+      }
+    });
+  </script>
+</body>
+</html>

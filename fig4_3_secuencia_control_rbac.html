@@ -1,0 +1,290 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Fig 4.3 - Control de Acceso RBAC | Innofarma</title>
+  <script src="https://cdn.jsdelivr.net/npm/mermaid@10/dist/mermaid.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/svg-pan-zoom@3.6.1/dist/svg-pan-zoom.min.js"></script>
+  <style>
+    *, *::before, *::after {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+
+    html, body {
+      width: 100vw;
+      height: 100vh;
+      overflow: hidden;
+      background-color: #f8fafc;
+      color: #0f172a;
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+      user-select: none;
+      -webkit-user-select: none;
+    }
+
+    /* BARRA DE CONTROL FLOTANTE (ESTILO MARIFARMA SALUD) */
+    .hud-bar {
+      position: fixed;
+      top: 12px;
+      right: 16px;
+      z-index: 2000;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      background: #ffffff;
+      border: 1.5px solid #0f172a;
+      border-radius: 10px;
+      padding: 6px 14px;
+      font-size: 11.5px;
+      box-shadow: 0 4px 12px rgba(15, 23, 42, 0.12);
+    }
+
+    .hud-status-badge {
+      background: #0f172a;
+      color: #ffffff;
+      font-size: 10px;
+      font-weight: 700;
+      letter-spacing: 0.5px;
+      padding: 4px 8px;
+      border-radius: 6px;
+      text-transform: uppercase;
+      white-space: nowrap;
+    }
+
+    .hud-controls {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+
+    .btn-hud {
+      background: #ffffff;
+      color: #0f172a;
+      border: 1.5px solid #0f172a;
+      border-radius: 6px;
+      padding: 5px 10px;
+      font-family: inherit;
+      font-size: 11px;
+      font-weight: 700;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      gap: 4px;
+      transition: all 0.15s ease;
+      white-space: nowrap;
+    }
+
+    .btn-hud:hover {
+      background: #0f172a;
+      color: #ffffff;
+    }
+
+    .zoom-text {
+      font-weight: 700;
+      min-width: 44px;
+      text-align: center;
+      font-size: 11.5px;
+      color: #0f172a;
+    }
+
+    .hud-hint {
+      font-size: 10.5px;
+      color: #64748b;
+      margin-right: 6px;
+      white-space: nowrap;
+    }
+
+    #container {
+      width: 100vw;
+      height: 100vh;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      background: radial-gradient(#e2e8f0 1px, transparent 1px);
+      background-size: 24px 24px;
+      background-color: #f8fafc;
+      cursor: grab;
+    }
+
+    #container:active {
+      cursor: grabbing;
+    }
+
+    #mermaid-target {
+      width: 100%;
+      height: 100%;
+    }
+
+    #mermaid-target svg {
+      width: 100% !important;
+      height: 100% !important;
+    }
+  </style>
+</head>
+<body>
+
+  <header class="hud-bar">
+    <span class="hud-status-badge">VISTA DE PROCESOS</span>
+    <span class="hud-hint">Arrastrar: Pan | Rueda: Zoom</span>
+    <div class="hud-controls">
+      <button class="btn-hud" id="btnZoomOut">− Zoom</button>
+      <span class="zoom-text" id="zoomText">100%</span>
+      <button class="btn-hud" id="btnZoomIn">+ Zoom</button>
+      <button class="btn-hud" id="btnFit">Ajustar</button>
+      <button class="btn-hud" id="btnReset">Reset</button>
+      <button class="btn-hud" id="btnCopy">Copiar Código</button>
+    </div>
+  </header>
+
+  <div id="container">
+    <div id="mermaid-target"></div>
+  </div>
+
+  <script>
+    const mermaidCode = `sequenceDiagram
+    autonumber
+    actor Usuario as Usuario / Cajero
+    participant PWA as Cliente PWA (Navegador)
+    participant AuthCtrl as AuthController (Laravel 11)
+    participant RBAC as Middleware CheckRolePermission
+    participant DB as PostgreSQL 16 (Seguridad)
+
+    Note over Usuario,DB: FASE 1: Solicitud de Autenticación (ILA-0013)
+    Usuario->>PWA: Ingresa usuario, contraseña y local de trabajo
+    PWA->>AuthCtrl: POST /api/v1/auth/login {username, password, id_local}
+    
+    AuthCtrl->>DB: SELECT id_usuario, password_hash, estado, id_rol FROM usuarios WHERE username = ?
+    alt ¿Usuario no encontrado o inactivo?
+        DB-->>AuthCtrl: Null o estado = 'INACTIVO'
+        AuthCtrl-->>PWA: HTTP 401 Unauthorized ("Credenciales inválidas o cuenta suspendida")
+        PWA-->>Usuario: Muestra mensaje de acceso denegado
+    else Usuario activo encontrado
+        DB-->>AuthCtrl: Registro de usuario (Hash Argon2id recuperado)
+        AuthCtrl->>AuthCtrl: Hash::check(password, password_hash)
+        
+        alt ¿Contraseña incorrecta?
+            AuthCtrl->>DB: INSERT INTO auditoria_accesos (username, evento='FALLO_PASSWORD', ip)
+            AuthCtrl-->>PWA: HTTP 401 Unauthorized ("Credenciales incorrectas")
+        else Contraseña válida
+            Note over AuthCtrl,DB: FASE 2: Carga de Perfil RBAC y Generación de Token (ILA-0015)
+            AuthCtrl->>DB: SELECT p.codigo FROM permisos p JOIN rol_permiso rp ON p.id = rp.id_permiso WHERE rp.id_rol = ?
+            DB-->>AuthCtrl: Lista de permisos ['ventas.crear', 'caja.aperturar', 'inventario.consultar']
+            
+            AuthCtrl->>DB: INSERT INTO sesiones_activas (id_usuario, id_local, token_hash, expira_at)
+            AuthCtrl-->>PWA: HTTP 200 OK {token_bearer: "eyJh...", usuario: {nombre, rol, permisos}}
+            PWA->>PWA: Almacena token en sessionStorage (Memoria de pestaña segura)
+            PWA-->>Usuario: Despliega Dashboard según permisos asignados
+        end
+    end
+
+    Note over Usuario,DB: FASE 3: Verificación de Autorización en Petición Protegida (ILA-0014 / ILA-0015)
+    Usuario->>PWA: Intenta acceder a operación restringida (ej. Desactivar Producto)
+    PWA->>RBAC: GET /api/v1/admin/productos/12/desactivar (Authorization: Bearer eyJh...)
+    RBAC->>RBAC: Decodifica token y valida expiración
+    RBAC->>DB: SELECT 1 FROM rol_permiso WHERE id_rol = ? AND id_permiso = 'productos.desactivar'
+    alt ¿Permiso no concedido para este rol?
+        DB-->>RBAC: Vacío / Sin autorización
+        RBAC-->>PWA: HTTP 403 Forbidden ("Acceso denegado: Requiere rol Administrador")
+        PWA-->>Usuario: Alerta visual: "No cuenta con privilegios para esta acción"
+    else Permiso verificado correctamente
+        DB-->>RBAC: Permiso confirmado
+        RBAC->>AuthCtrl: Delegar ejecución a controlador de negocio
+    end
+
+    Note over Usuario,DB: FASE 4: Cierre de Sesión Seguro (ILA-0016)
+    Usuario->>PWA: Clic en "Cerrar Sesión"
+    PWA->>AuthCtrl: POST /api/v1/auth/logout (Bearer Token)
+    AuthCtrl->>DB: UPDATE sesiones_activas SET revocado = TRUE WHERE token_hash = ?
+    AuthCtrl->>DB: INSERT INTO auditoria_accesos (id_usuario, evento='LOGOUT_EXITOSO')
+    DB-->>AuthCtrl: Sesión invalidada permanentemente
+    AuthCtrl-->>PWA: HTTP 200 OK ("Sesión terminada")
+    PWA->>PWA: Limpia sessionStorage y redirige a pantalla de login`;
+
+    mermaid.initialize({
+      startOnLoad: false,
+      theme: 'base',
+      themeVariables: {
+        fontFamily: 'Segoe UI, Arial, sans-serif',
+        fontSize: '13px',
+        primaryColor: '#e0e7ff',
+        primaryTextColor: '#1e1b4b',
+        primaryBorderColor: '#3730a3',
+        lineColor: '#3730a3',
+        secondaryColor: '#ccfbf1',
+        tertiaryColor: '#f0fdfa',
+        noteBkgColor: '#f0fdfa',
+        noteTextColor: '#0f766e',
+        noteBorderColor: '#0d9488',
+        actorBkg: '#0f172a',
+        actorTextColor: '#ffffff',
+        actorBorder: '#1e293b',
+        actorLineColor: '#0f172a',
+        signalColor: '#3730a3',
+        signalTextColor: '#1e1b4b',
+        labelBoxBkgColor: '#e0e7ff',
+        labelBoxBorderColor: '#3730a3',
+        labelTextColor: '#1e1b4b'
+      }
+    });
+
+    let panZoomInstance = null;
+
+    async function renderDiagram() {
+      const target = document.getElementById('mermaid-target');
+      const { svg } = await mermaid.render('mermaid-svg-43', mermaidCode);
+      target.innerHTML = svg;
+
+      const svgElement = target.querySelector('svg');
+      svgElement.style.maxWidth = 'none';
+      panZoomInstance = svgPanZoom(svgElement, {
+        zoomEnabled: true,
+        controlIconsEnabled: false,
+        fit: true,
+        center: true,
+        minZoom: 0.25,
+        maxZoom: 5.0,
+        onZoom: function(newScale) {
+          document.getElementById('zoomText').textContent = `${Math.round(newScale * 100)}%`;
+        }
+      });
+
+      document.getElementById('btnZoomIn').addEventListener('click', () => panZoomInstance.zoomIn());
+      document.getElementById('btnZoomOut').addEventListener('click', () => panZoomInstance.zoomOut());
+      document.getElementById('btnFit').addEventListener('click', () => {
+        panZoomInstance.resize();
+        panZoomInstance.fit();
+        panZoomInstance.center();
+      });
+      document.getElementById('btnReset').addEventListener('click', () => {
+        panZoomInstance.reset();
+        panZoomInstance.fit();
+        panZoomInstance.center();
+      });
+
+      document.getElementById('btnCopy').addEventListener('click', () => {
+        navigator.clipboard.writeText(mermaidCode);
+        const btn = document.getElementById('btnCopy');
+        const orig = btn.textContent;
+        btn.textContent = '✓ Copiado';
+        setTimeout(() => btn.textContent = orig, 1500);
+      });
+    }
+
+    window.addEventListener('load', renderDiagram);
+    window.addEventListener('resize', () => {
+      if (panZoomInstance) {
+        panZoomInstance.resize();
+        panZoomInstance.fit();
+        panZoomInstance.center();
+      }
+    });
+    window.addEventListener('keydown', (e) => {
+      if ((e.key === 'm' || e.key === 'M') && window.parent && window.parent !== window && typeof window.parent.toggleSidebar === 'function') {
+        window.parent.toggleSidebar();
+      }
+    });
+  </script>
+</body>
+</html>

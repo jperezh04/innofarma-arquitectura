@@ -1,0 +1,285 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Fig 4.6 - Caja y Arqueo Ciego | Innofarma</title>
+  <script src="https://cdn.jsdelivr.net/npm/mermaid@10/dist/mermaid.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/svg-pan-zoom@3.6.1/dist/svg-pan-zoom.min.js"></script>
+  <style>
+    *, *::before, *::after {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+
+    html, body {
+      width: 100vw;
+      height: 100vh;
+      overflow: hidden;
+      background-color: #f8fafc;
+      color: #0f172a;
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+      user-select: none;
+      -webkit-user-select: none;
+    }
+
+    /* BARRA DE CONTROL FLOTANTE (ESTILO MARIFARMA SALUD) */
+    .hud-bar {
+      position: fixed;
+      top: 12px;
+      right: 16px;
+      z-index: 2000;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      background: #ffffff;
+      border: 1.5px solid #d97706;
+      border-radius: 10px;
+      padding: 6px 14px;
+      font-size: 11.5px;
+      box-shadow: 0 4px 12px rgba(217, 119, 6, 0.12);
+    }
+
+    .hud-status-badge {
+      background: #d97706;
+      color: #ffffff;
+      font-size: 10px;
+      font-weight: 700;
+      letter-spacing: 0.5px;
+      padding: 4px 8px;
+      border-radius: 6px;
+      text-transform: uppercase;
+      white-space: nowrap;
+    }
+
+    .hud-controls {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+
+    .btn-hud {
+      background: #ffffff;
+      color: #b45309;
+      border: 1.5px solid #d97706;
+      border-radius: 6px;
+      padding: 5px 10px;
+      font-family: inherit;
+      font-size: 11px;
+      font-weight: 700;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      gap: 4px;
+      transition: all 0.15s ease;
+      white-space: nowrap;
+    }
+
+    .btn-hud:hover {
+      background: #d97706;
+      color: #ffffff;
+    }
+
+    .zoom-text {
+      font-weight: 700;
+      min-width: 44px;
+      text-align: center;
+      font-size: 11.5px;
+      color: #b45309;
+    }
+
+    .hud-hint {
+      font-size: 10.5px;
+      color: #64748b;
+      margin-right: 6px;
+      white-space: nowrap;
+    }
+
+    #container {
+      width: 100vw;
+      height: 100vh;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      background: radial-gradient(#fef3c7 1px, transparent 1px);
+      background-size: 24px 24px;
+      background-color: #f8fafc;
+      cursor: grab;
+    }
+
+    #container:active {
+      cursor: grabbing;
+    }
+
+    #mermaid-target {
+      width: 100%;
+      height: 100%;
+    }
+
+    #mermaid-target svg {
+      width: 100% !important;
+      height: 100% !important;
+    }
+  </style>
+</head>
+<body>
+
+  <header class="hud-bar">
+    <span class="hud-status-badge">VISTA DE PROCESOS</span>
+    <span class="hud-hint">Arrastrar: Pan | Rueda: Zoom</span>
+    <div class="hud-controls">
+      <button class="btn-hud" id="btnZoomOut">− Zoom</button>
+      <span class="zoom-text" id="zoomText">100%</span>
+      <button class="btn-hud" id="btnZoomIn">+ Zoom</button>
+      <button class="btn-hud" id="btnFit">Ajustar</button>
+      <button class="btn-hud" id="btnReset">Reset</button>
+      <button class="btn-hud" id="btnCopy">Copiar Código</button>
+    </div>
+  </header>
+
+  <div id="container">
+    <div id="mermaid-target"></div>
+  </div>
+
+  <script>
+    const mermaidCode = `sequenceDiagram
+    autonumber
+    actor Cajero as Cajero / Farmacéutico
+    actor Admin as Administradora / Supervisora
+    participant PWA as Módulo Caja (PWA)
+    participant Ticketera as Ticketera ESC/POS (80mm)
+    participant Ctrl as CajaController (Laravel 11)
+    participant Service as ArqueoService (Conciliación Ciega)
+    participant DB as PostgreSQL 16 (Transaccional)
+
+    Note over Cajero,DB: FASE 1: Apertura de Sesión de Caja (ILA-0033)
+    Cajero->>PWA: Selecciona local y digita monto de apertura (Fondo de sencillo: S/ 150.00)
+    PWA->>Ctrl: POST /api/v1/cajas/apertura {id_local, monto_apertura: 150.00}
+    Ctrl->>DB: SELECT id_sesion FROM sesiones_caja WHERE id_local = ? AND id_usuario = ? AND estado = 'ABIERTA'
+    alt ¿El cajero ya tiene una caja abierta en esta sede?
+        DB-->>Ctrl: Sesión activa existente (ID: 104)
+        Ctrl-->>PWA: HTTP 409 Conflict ("El usuario ya posee una sesión de caja abierta")
+    else No tiene sesión previa
+        DB-->>Ctrl: Null
+        Ctrl->>DB: INSERT INTO sesiones_caja (id_usuario, id_local, monto_apertura, fecha_apertura, estado) VALUES (?, ?, 150.00, NOW(), 'ABIERTA') RETURNING id_sesion
+        DB-->>Ctrl: Sesión Aperturada ID: 105
+        Ctrl-->>PWA: HTTP 201 Created {status: "OPEN", sesion_id: 105}
+        PWA-->>Cajero: Interfaz habilitada: Caja Lista para Procesar Ventas
+    end
+
+    Note over Cajero,DB: FASE 2: Conteo Físico Ciego para Cierre de Turno (ILA-0035)
+    Cajero->>PWA: Solicita "Cerrar Turno / Cuadre de Caja"
+    PWA->>PWA: Presenta plantilla de desglose monetario (Billetes, Monedas, Vouchers Yape/Plin, Tarjetas)
+    Note right of PWA: Arqueo Ciego: La cajera NO conoce<br/>el total esperado del sistema<br/>para evitar manipulaciones.
+    Cajero->>PWA: Ingresa montos contados físicamente (Efectivo: S/ 850.00, Yape: S/ 200.00)
+    PWA->>Ctrl: POST /api/v1/cajas/105/cierre {efectivo_declarado: 850.00, digital_declarado: 200.00}
+
+    Note over Ctrl,DB: FASE 3: Transacción de Conciliación y Liquidación Transaccional
+    Ctrl->>Service: conciliarYCerrarSesion(105, montosDeclarados)
+    Service->>DB: BEGIN TRANSACTION (Nivel de Aislamiento: READ COMMITTED)
+    
+    Service->>DB: SELECT COALESCE(SUM(monto), 0) FROM movimientos_caja WHERE id_sesion = 105 AND tipo_movimiento = 'INGRESO_VENTA' FOR UPDATE
+    DB-->>Service: Total Ventas Sistema: S/ 900.00
+    
+    Service->>Service: Calcular balance: (Fondo Inicial + Ventas Sistema) vs Total Declarado
+    Note over Service: Esperado: S/ 150 (Fondo) + S/ 900 (Ventas) = S/ 1050.00<br/>Declarado: S/ 850 (Efectivo) + S/ 200 (Yape) = S/ 1050.00<br/>Diferencia: S/ 0.00 (Cuadre Exacto)
+    
+    Service->>DB: UPDATE sesiones_caja SET monto_cierre_efectivo = 850.00, monto_cierre_digital = 200.00, total_sistema = 1050.00, diferencia = 0.00, estado = 'CERRADA', fecha_cierre = NOW() WHERE id_sesion = 105
+    Service->>DB: INSERT INTO bitacora_auditoria (id_usuario, accion='CIERRE_CAJA_CONCILIADO', registro_id=105)
+    Service->>DB: COMMIT TRANSACTION (Cierre irreversible y consistente)
+    DB-->>Service: Transacción exitosa confirmada
+
+    Note over Ctrl,Ticketera: FASE 4: Emisión de Ticket de Arqueo y Notificación Gerencial
+    Service-->>Ctrl: Retorna Resumen de Liquidación y Auditoría
+    Ctrl-->>PWA: HTTP 200 OK {status: "CLOSED", balance: "CUADRADO", ticket_arqueo_raw}
+    PWA->>Ticketera: Enviar comandos ESC/POS de reporte de cierre (80mm)
+    Ticketera-->>Cajero: Imprime Ticket de Arqueo con desglose legal
+    PWA-->>Admin: Notificación en Dashboard Gerencial: "Turno #105 cerrado y conciliado"`;
+
+    mermaid.initialize({
+      startOnLoad: false,
+      theme: 'base',
+      themeVariables: {
+        fontFamily: 'Segoe UI, Arial, sans-serif',
+        fontSize: '13px',
+        primaryColor: '#fef3c7',
+        primaryTextColor: '#78350f',
+        primaryBorderColor: '#d97706',
+        lineColor: '#b45309',
+        secondaryColor: '#fef9c3',
+        tertiaryColor: '#fffbeb',
+        noteBkgColor: '#fffbeb',
+        noteTextColor: '#92400e',
+        noteBorderColor: '#f59e0b',
+        actorBkg: '#d97706',
+        actorTextColor: '#ffffff',
+        actorBorder: '#b45309',
+        actorLineColor: '#d97706',
+        signalColor: '#b45309',
+        signalTextColor: '#78350f',
+        labelBoxBkgColor: '#fef3c7',
+        labelBoxBorderColor: '#d97706',
+        labelTextColor: '#92400e'
+      }
+    });
+
+    let panZoomInstance = null;
+
+    async function renderDiagram() {
+      const target = document.getElementById('mermaid-target');
+      const { svg } = await mermaid.render('mermaid-svg-46', mermaidCode);
+      target.innerHTML = svg;
+
+      const svgElement = target.querySelector('svg');
+      svgElement.style.maxWidth = 'none';
+      panZoomInstance = svgPanZoom(svgElement, {
+        zoomEnabled: true,
+        controlIconsEnabled: false,
+        fit: true,
+        center: true,
+        minZoom: 0.25,
+        maxZoom: 5.0,
+        onZoom: function(newScale) {
+          document.getElementById('zoomText').textContent = `${Math.round(newScale * 100)}%`;
+        }
+      });
+
+      document.getElementById('btnZoomIn').addEventListener('click', () => panZoomInstance.zoomIn());
+      document.getElementById('btnZoomOut').addEventListener('click', () => panZoomInstance.zoomOut());
+      document.getElementById('btnFit').addEventListener('click', () => {
+        panZoomInstance.resize();
+        panZoomInstance.fit();
+        panZoomInstance.center();
+      });
+      document.getElementById('btnReset').addEventListener('click', () => {
+        panZoomInstance.reset();
+        panZoomInstance.fit();
+        panZoomInstance.center();
+      });
+
+      document.getElementById('btnCopy').addEventListener('click', () => {
+        navigator.clipboard.writeText(mermaidCode);
+        const btn = document.getElementById('btnCopy');
+        const orig = btn.textContent;
+        btn.textContent = '✓ Copiado';
+        setTimeout(() => btn.textContent = orig, 1500);
+      });
+    }
+
+    window.addEventListener('load', renderDiagram);
+    window.addEventListener('resize', () => {
+      if (panZoomInstance) {
+        panZoomInstance.resize();
+        panZoomInstance.fit();
+        panZoomInstance.center();
+      }
+    });
+    window.addEventListener('keydown', (e) => {
+      if ((e.key === 'm' || e.key === 'M') && window.parent && window.parent !== window && typeof window.parent.toggleSidebar === 'function') {
+        window.parent.toggleSidebar();
+      }
+    });
+  </script>
+</body>
+</html>

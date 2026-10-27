@@ -1,0 +1,428 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Vista Física V01.00 — Despliegue Oficial | Innofarma</title>
+  <script src="https://cdn.jsdelivr.net/npm/mermaid@10/dist/mermaid.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/svg-pan-zoom@3.6.1/dist/svg-pan-zoom.min.js"></script>
+  <style>
+    *, *::before, *::after {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+
+    html, body {
+      width: 100vw;
+      height: 100vh;
+      overflow: hidden;
+      background-color: #f8fafc;
+      color: #0f172a;
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+      user-select: none;
+      -webkit-user-select: none;
+    }
+
+    /* BARRA DE CONTROL FLOTANTE (ESTILO MARIFARMA SALUD) */
+    .hud-bar {
+      position: fixed;
+      top: 12px;
+      right: 16px;
+      z-index: 2000;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      background: rgba(255, 255, 255, 0.96);
+      backdrop-filter: blur(8px);
+      border: 1.5px solid #0284c7;
+      border-radius: 10px;
+      padding: 6px 12px;
+      font-size: 11.5px;
+      box-shadow: 0 4px 14px rgba(2, 132, 199, 0.14);
+      max-width: calc(100vw - 32px);
+      flex-wrap: wrap;
+    }
+
+    .hud-status-badge {
+      background: #0284c7;
+      color: #ffffff;
+      font-size: 10px;
+      font-weight: 700;
+      letter-spacing: 0.5px;
+      padding: 4px 8px;
+      border-radius: 6px;
+      text-transform: uppercase;
+      white-space: nowrap;
+    }
+
+    .hud-controls {
+      display: flex;
+      align-items: center;
+      gap: 5px;
+      flex-wrap: wrap;
+    }
+
+    .btn-hud {
+      background: #ffffff;
+      color: #0369a1;
+      border: 1.5px solid #0284c7;
+      border-radius: 6px;
+      padding: 5px 9px;
+      font-family: inherit;
+      font-size: 11px;
+      font-weight: 700;
+      cursor: pointer;
+      display: inline-flex;
+      align-items: center;
+      gap: 4px;
+      transition: all 0.15s ease;
+      white-space: nowrap;
+    }
+
+    .btn-hud:hover {
+      background: #0284c7;
+      color: #ffffff;
+    }
+
+    .zoom-text {
+      font-weight: 700;
+      min-width: 44px;
+      text-align: center;
+      font-size: 11.5px;
+      color: #0369a1;
+    }
+
+    .hud-hint {
+      font-size: 10.5px;
+      color: #64748b;
+      margin-right: 4px;
+      white-space: nowrap;
+    }
+
+    /* LEYENDA SEMÁNTICA FLOTANTE INFERIOR */
+    .legend-bar {
+      position: fixed;
+      bottom: 12px;
+      left: 16px;
+      z-index: 1500;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      flex-wrap: wrap;
+      background: rgba(255, 255, 255, 0.95);
+      backdrop-filter: blur(8px);
+      border: 1px solid #cbd5e1;
+      border-radius: 9px;
+      padding: 6px 12px;
+      font-size: 10.5px;
+      color: #334155;
+      box-shadow: 0 3px 10px rgba(15, 23, 42, 0.08);
+    }
+
+    .legend-item {
+      display: inline-flex;
+      align-items: center;
+      gap: 5px;
+      font-weight: 600;
+    }
+
+    .legend-dot {
+      width: 10px;
+      height: 10px;
+      border-radius: 3px;
+      display: inline-block;
+    }
+
+    /* LIENZO DE NAVEGACIÓN PAN & ZOOM */
+    #container {
+      width: 100vw;
+      height: 100vh;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      background: radial-gradient(#bae6fd 1.1px, transparent 1.1px);
+      background-size: 24px 24px;
+      background-color: #f8fafc;
+      cursor: grab;
+    }
+
+    #container:active {
+      cursor: grabbing;
+    }
+
+    #mermaid-target {
+      width: 100%;
+      height: 100%;
+    }
+
+    #mermaid-target svg {
+      width: 100% !important;
+      height: 100% !important;
+      max-width: none !important;
+    }
+
+    /* Pulido de etiquetas de aristas en Mermaid */
+    #mermaid-target .edgeLabel {
+      background-color: rgba(255, 255, 255, 0.94) !important;
+      padding: 2px 6px !important;
+      border-radius: 5px !important;
+      border: 1px solid #cbd5e1 !important;
+      color: #0f172a !important;
+      font-weight: 600 !important;
+      font-size: 11.5px !important;
+    }
+
+    #mermaid-target .cluster rect {
+      rx: 8px !important;
+      ry: 8px !important;
+    }
+
+    #mermaid-target .cluster-label span,
+    #mermaid-target .cluster-label text {
+      font-weight: 700 !important;
+    }
+
+    @media (max-width: 768px) {
+      .hud-hint, .legend-bar { display: none; }
+    }
+  </style>
+</head>
+<body>
+
+  <!-- BARRA DE CONTROL FLOTANTE (HUD) -->
+  <header class="hud-bar">
+    <span class="hud-status-badge">VISTA FÍSICA V01.00</span>
+    <span class="hud-hint">Arrastrar: Pan | Rueda: Zoom</span>
+    <div class="hud-controls">
+      <button class="btn-hud" id="btnZoomOut">− Zoom</button>
+      <span class="zoom-text" id="zoomText">100%</span>
+      <button class="btn-hud" id="btnZoomIn">+ Zoom</button>
+      <button class="btn-hud" id="btnFit">Ajustar</button>
+      <button class="btn-hud" id="btnReset">Reset</button>
+      <button class="btn-hud" id="btnSvg">Descargar SVG</button>
+      <button class="btn-hud" id="btnCopy">Copiar Código</button>
+    </div>
+  </header>
+
+  <!-- LEYENDA SEMÁNTICA MARIFARMA SALUD -->
+  <div class="legend-bar">
+    <strong style="color:#0f172a;">Semántica Marifarma Salud:</strong>
+    <span class="legend-item"><span class="legend-dot" style="background:#ccfbf1;border:1.5px solid #0d9488;"></span>Aplicación / POS (PWA &amp; Laravel)</span>
+    <span class="legend-item"><span class="legend-dot" style="background:#d1fae5;border:1.5px solid #059669;"></span>Datos / Stock (PostgreSQL &amp; IndexedDB)</span>
+    <span class="legend-item"><span class="legend-dot" style="background:#e0f2fe;border:1.5px solid #0284c7;"></span>Red / VPN WireGuard</span>
+    <span class="legend-item"><span class="legend-dot" style="background:#e0e7ff;border:1.5px solid #4338ca;"></span>Admin Remota</span>
+    <span class="legend-item"><span class="legend-dot" style="background:#f1f5f9;border:1.5px solid #475569;"></span>Hardware / SO / USB</span>
+  </div>
+
+  <div id="container">
+    <div id="mermaid-target"></div>
+  </div>
+
+  <script>
+    const mermaidCode = `flowchart TB
+    %% =========================================================
+    %% VISTA FÍSICA V01.00 — ARQUITECTURA DE DESPLIEGUE INNOFARMA
+    %% =========================================================
+
+    subgraph WAN ["Nube Pública / Internet"]
+        direction TB
+        INET(("Internet Pública"))
+    end
+
+    subgraph L1 ["Local 1 — Sucursal Central (Servidor + Caja 1)"]
+        direction TB
+        subgraph L1_NET ["Red LAN Local 1 (Subred 192.168.1.0/24)"]
+            R1["Router Local 1<br/><i>IP Pública Dinámica + DDNS</i><br/><b>Port Forward: UDP 51820</b>"]
+
+            subgraph PC1 ["PC 1: Lenovo ThinkCentre Neo 50s (Servidor Local)"]
+                OS1["Windows 10 Pro (64-bit)<br/>Core i3-12100F | 8GB RAM | 256GB NVMe"]
+
+                subgraph SVR ["Servicios de Backend & Red"]
+                    WG1["Servidor WireGuard<br/><b>10.10.0.1:51820</b>"]
+                    HTTP1["Servidor Web Apache / Nginx<br/><b>Puerto 443 (HTTPS)</b>"]
+                    APP1["Innofarma Backend<br/><b>PHP 8.2 / Laravel 11</b>"]
+                    DB1[("PostgreSQL 16<br/><b>Stock Centralizado</b><br/><i>localhost:5432</i>")]
+                end
+
+                subgraph CJ1 ["Puesto Caja 1 (Local)"]
+                    BR1["Navegador Web (Chrome/Edge)<br/><i>https://localhost</i>"]
+                    PRN1["Impresora Térmica 80mm<br/><i>(Conexión USB)</i>"]
+                    BAR1["Lector de Código de Barras<br/><i>(USB HID)</i>"]
+                end
+            end
+        end
+    end
+
+    subgraph L2 ["Local 2 — Sucursal Secundaria (Caja 2 Independiente)"]
+        direction TB
+        subgraph L2_NET ["Red LAN Local 2 (Subred 192.168.2.0/24)"]
+            R2["Router Local 2<br/><i>Salida estándar a Internet</i>"]
+
+            subgraph PC2 ["PC 2: Lenovo ThinkCentre Neo 50s (Cliente / Offline)"]
+                OS2["Windows 10 Pro (64-bit)<br/>Core i3-12100F | 8GB RAM | 256GB NVMe"]
+
+                subgraph CLIENT2 ["Puesto de Venta Local 2"]
+                    WG2["Cliente WireGuard<br/><b>Túnel VPN: 10.10.0.2</b>"]
+                    BR2["Navegador Web / PWA<br/><i>https://10.10.0.1</i>"]
+                    IDB2[("IndexedDB (Dexie.js)<br/><b>Copia Local Stock Local 2</b><br/><b>Cola Ventas Offline</b>")]
+                    PRN2["Impresora Térmica 80mm<br/><i>(Conexión USB)</i>"]
+                    BAR2["Lector de Código de Barras<br/><i>(USB HID)</i>"]
+                end
+            end
+        end
+    end
+
+    subgraph REMOTO ["Administración Remota (Propietaria)"]
+        direction TB
+        subgraph MOB ["Dispositivo Móvil / Laptop"]
+            WGM["Cliente WireGuard<br/><b>Túnel VPN: 10.10.0.3</b><br/><i>(Autenticado vía QR)</i>"]
+            BRM["Navegador Móvil Seguro<br/><i>Dashboard: https://10.10.0.1</i>"]
+        end
+    end
+
+    %% Enlaces y Conexiones Oficiales (Vista Física V01.00)
+    R2 <-->|"Conexión Fibra / WAN"| INET
+    MOB <-->|"Red Celular 4G/5G"| INET
+    INET <-->|"Conexión Fibra / WAN"| R1
+    INET ==>|"Túnel Seguro WireGuard (UDP 51820)"| R1
+
+    R1 --> WG1
+    WG1 --> HTTP1
+    HTTP1 --- APP1
+    APP1 --- DB1
+    BR1 --> HTTP1
+    BR1 -.-> PRN1
+    BAR1 -.-> BR1
+
+    PC2 --> R2
+    WG2 ==>|"Túnel Encriptado L2 a L1"| WG1
+    BR2 --> WG2
+    BR2 <--> IDB2
+    BR2 -.-> PRN2
+    BAR2 -.-> BR2
+
+    WGM ==>|"Túnel Encriptado Admin a L1"| WG1
+    BRM --> WGM
+
+    %% Clases Semánticas Marifarma Salud
+    classDef appNode fill:#ccfbf1,stroke:#0d9488,color:#0f172a,stroke-width:2px;
+    classDef dbNode fill:#d1fae5,stroke:#059669,color:#064e3b,stroke-width:2px;
+    classDef netNode fill:#e0f2fe,stroke:#0284c7,color:#0c4a6e,stroke-width:2px;
+    classDef adminNode fill:#e0e7ff,stroke:#4338ca,color:#1e1b4b,stroke-width:2px;
+    classDef hwNode fill:#f1f5f9,stroke:#475569,color:#1e293b,stroke-width:1.8px;
+
+    class BR1,BR2,HTTP1,APP1 appNode;
+    class DB1,IDB2 dbNode;
+    class R1,R2,WG1,WG2,INET netNode;
+    class BRM,WGM adminNode;
+    class OS1,OS2,BAR1,PRN1,BAR2,PRN2 hwNode;
+
+    style REMOTO fill:#eef2ff,stroke:#4338ca,stroke-width:2px,color:#1e1b4b
+    style MOB fill:#ffffff,stroke:#6366f1,stroke-width:1.5px,color:#312e81
+    style L2 fill:#f0f9ff,stroke:#0284c7,stroke-width:2px,color:#0c4a6e
+    style L2_NET fill:#f8fafc,stroke:#d97706,stroke-width:1.5px,color:#78350f
+    style PC2 fill:#ffffff,stroke:#475569,stroke-width:1.8px,color:#0f172a
+    style CLIENT2 fill:#f0fdfa,stroke:#0d9488,stroke-width:1.5px,color:#0f766e
+    style WAN fill:#eff6ff,stroke:#0284c7,stroke-width:2px,color:#0c4a6e
+    style L1 fill:#ecfdf5,stroke:#059669,stroke-width:2px,color:#064e3b
+    style L1_NET fill:#f8fafc,stroke:#d97706,stroke-width:1.5px,color:#78350f
+    style PC1 fill:#ffffff,stroke:#475569,stroke-width:1.8px,color:#0f172a
+    style CJ1 fill:#f0fdfa,stroke:#0d9488,stroke-width:1.5px,color:#0f766e
+    style SVR fill:#ecfdf5,stroke:#059669,stroke-width:1.5px,color:#065f46`;
+
+    mermaid.initialize({
+      startOnLoad: false,
+      theme: 'base',
+      flowchart: {
+        useMaxWidth: false,
+        htmlLabels: true,
+        curve: 'basis',
+        nodeSpacing: 36,
+        rankSpacing: 46
+      },
+      themeVariables: {
+        fontFamily: 'Segoe UI, Arial, sans-serif',
+        fontSize: '13px',
+        primaryColor: '#e0f2fe',
+        primaryTextColor: '#0f172a',
+        primaryBorderColor: '#0284c7',
+        lineColor: '#334155',
+        secondaryColor: '#ccfbf1',
+        tertiaryColor: '#f8fafc'
+      }
+    });
+
+    let panZoomInstance = null;
+
+    async function renderDiagram() {
+      const target = document.getElementById('mermaid-target');
+      const { svg } = await mermaid.render('mermaid-svg-fisica', mermaidCode);
+      target.innerHTML = svg;
+
+      const svgElement = target.querySelector('svg');
+      svgElement.style.maxWidth = 'none';
+
+      panZoomInstance = svgPanZoom(svgElement, {
+        zoomEnabled: true,
+        controlIconsEnabled: false,
+        fit: true,
+        center: true,
+        minZoom: 0.15,
+        maxZoom: 6.0,
+        onZoom: function(newScale) {
+          document.getElementById('zoomText').textContent = `${Math.round(newScale * 100)}%`;
+        }
+      });
+
+      document.getElementById('btnZoomIn').addEventListener('click', () => panZoomInstance.zoomIn());
+      document.getElementById('btnZoomOut').addEventListener('click', () => panZoomInstance.zoomOut());
+      document.getElementById('btnFit').addEventListener('click', () => {
+        panZoomInstance.resize();
+        panZoomInstance.fit();
+        panZoomInstance.center();
+      });
+      document.getElementById('btnReset').addEventListener('click', () => {
+        panZoomInstance.reset();
+        panZoomInstance.fit();
+        panZoomInstance.center();
+      });
+
+      document.getElementById('btnSvg').addEventListener('click', () => {
+        const serializer = new XMLSerializer();
+        const svgBlob = new Blob([serializer.serializeToString(svgElement)], { type: 'image/svg+xml;charset=utf-8' });
+        const url = URL.createObjectURL(svgBlob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = 'Vista_Fisica_Innofarma_V01.00.svg';
+        a.click();
+        URL.revokeObjectURL(url);
+      });
+
+      document.getElementById('btnCopy').addEventListener('click', () => {
+        navigator.clipboard.writeText(mermaidCode);
+        const btn = document.getElementById('btnCopy');
+        const orig = btn.textContent;
+        btn.textContent = '✓ Copiado';
+        setTimeout(() => btn.textContent = orig, 1500);
+      });
+    }
+
+    window.addEventListener('load', renderDiagram);
+
+    window.addEventListener('resize', () => {
+      if (panZoomInstance) {
+        panZoomInstance.resize();
+        panZoomInstance.fit();
+        panZoomInstance.center();
+      }
+    });
+
+    window.addEventListener('keydown', (e) => {
+      if ((e.key === 'm' || e.key === 'M') && window.parent && window.parent !== window && typeof window.parent.toggleSidebar === 'function') {
+        window.parent.toggleSidebar();
+      }
+    });
+  </script>
+</body>
+</html>
