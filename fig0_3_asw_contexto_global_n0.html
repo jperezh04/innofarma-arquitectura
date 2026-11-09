@@ -1,0 +1,804 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>ASW-0001-N0 y DES — Contexto Global (Nivel 0) y Máquinas de Estados | Innofarma</title>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    html, body {
+      width: 100vw;
+      height: 100vh;
+      overflow: hidden;
+      background: #ffffff;
+      color: #0f172a;
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+      user-select: none;
+      -webkit-user-select: none;
+    }
+
+    .hud-bar {
+      position: fixed;
+      top: 10px;
+      left: 14px;
+      right: 14px;
+      z-index: 2000;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 10px;
+      background: rgba(255, 255, 255, 0.97);
+      border: 2px solid #0f172a;
+      box-shadow: 3px 3px 0px #0f172a;
+      padding: 7px 14px;
+      flex-wrap: wrap;
+    }
+
+    .hud-left { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
+    .hud-badge {
+      background: #0f172a;
+      color: #ffffff;
+      font-size: 10.5px;
+      font-weight: 800;
+      padding: 4px 9px;
+      text-transform: uppercase;
+    }
+
+    .hud-lod-indicator {
+      font-size: 11px;
+      font-weight: 800;
+      padding: 4px 9px;
+      border: 1.5px solid #0f172a;
+      background: #f1f5f9;
+    }
+
+    .hud-lod-indicator.micro-active {
+      background: #ccfbf1;
+      border-color: #0f766e;
+      color: #0f766e;
+    }
+
+    .hud-controls { display: flex; align-items: center; gap: 6px; flex-wrap: wrap; }
+    .hud-btn {
+      background: #ffffff;
+      color: #0f172a;
+      border: 1.5px solid #0f172a;
+      padding: 4px 10px;
+      font-size: 11px;
+      font-weight: 800;
+      cursor: pointer;
+      box-shadow: 1.5px 1.5px 0px #0f172a;
+    }
+
+    .hud-btn:hover, .hud-btn.active { background: #0f172a; color: #ffffff; }
+
+    .stamp-bar {
+      position: fixed;
+      bottom: 10px;
+      left: 14px;
+      right: 14px;
+      z-index: 1900;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      background: rgba(255, 255, 255, 0.96);
+      border: 1.5px solid #0f172a;
+      padding: 5px 12px;
+      font-size: 10.5px;
+      color: #1e293b;
+      flex-wrap: wrap;
+    }
+
+    #viewport {
+      width: 100vw;
+      height: 100vh;
+      overflow: hidden;
+      cursor: grab;
+      position: relative;
+      background-color: #ffffff;
+      background-image: radial-gradient(#cbd5e1 0.85px, transparent 0.85px);
+      background-size: 22px 22px;
+    }
+
+    #viewport.grabbing { cursor: grabbing; }
+
+    #canvas {
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 2400px;
+      height: 1480px;
+      transform-origin: 0 0;
+    }
+
+    .panel-box {
+      position: absolute;
+      border: 2.5px solid #0f172a;
+      background: rgba(248, 250, 252, 0.72);
+      box-shadow: 5px 5px 0px #0f172a;
+      padding: 16px;
+    }
+
+    .panel-header {
+      background: #0f172a;
+      color: #ffffff;
+      padding: 7px 14px;
+      margin: -16px -16px 14px -16px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      font-size: 13.5px;
+      font-weight: 900;
+      letter-spacing: 0.4px;
+      text-transform: uppercase;
+    }
+
+    .panel-subchip {
+      background: #ffffff;
+      color: #0f172a;
+      font-size: 10.5px;
+      padding: 2px 8px;
+      font-weight: 800;
+    }
+
+    .arch-node {
+      position: absolute;
+      background: #ffffff;
+      border: 2px solid #0f172a;
+      box-shadow: 3.5px 3.5px 0px #0f172a;
+      padding: 11px 14px;
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      z-index: 2;
+    }
+
+    .arch-node.blackbox {
+      border-width: 3px;
+      box-shadow: 6px 6px 0px #0f172a;
+    }
+
+    .arch-node.sem-highlight {
+      border: 3px solid #2563eb !important;
+      box-shadow: 6px 6px 0px #1d4ed8 !important;
+      background: #eff6ff !important;
+    }
+
+    .arch-node.sem-dimmed {
+      opacity: 0.25;
+      filter: grayscale(0.45);
+    }
+
+    .macro-view {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      text-align: center;
+      gap: 4px;
+    }
+
+    .macro-title { font-size: 14.5px; font-weight: 900; text-transform: uppercase; }
+    .macro-code { font-size: 11.5px; font-weight: 800; color: #334155; }
+
+    .micro-view { display: none; flex-direction: column; text-align: left; }
+    body.lod-micro .macro-view { display: none; }
+    body.lod-micro .micro-view { display: flex; }
+
+    .micro-title { font-size: 13.5px; font-weight: 900; margin-bottom: 2px; }
+    .micro-role { font-size: 9.5px; font-weight: 800; color: #475569; text-transform: uppercase; margin-bottom: 5px; }
+    .pill-row { display: flex; flex-wrap: wrap; gap: 3px; margin-bottom: 5px; }
+    .code-pill { background: #0f172a; color: #ffffff; font-size: 9px; font-weight: 800; padding: 1.5px 5px; }
+    .code-pill.pill-rnf { background: #0f766e; }
+    .code-pill.pill-risk { background: #991b1b; }
+    .micro-divider { border: none; border-top: 1.5px solid #0f172a; margin: 2px 0 5px 0; }
+    .micro-list { list-style: none; font-size: 10.3px; line-height: 1.32; display: flex; flex-direction: column; gap: 3px; }
+    .txt-fort { color: #065f46; font-weight: 700; }
+    .txt-risk { color: #991b1b; font-weight: 700; }
+
+    .edge-label {
+      position: absolute;
+      z-index: 3;
+      background: #ffffff;
+      border: 1.5px solid #0f172a;
+      box-shadow: 2px 2px 0px #0f172a;
+      padding: 2px 7px;
+      font-size: 10px;
+      font-weight: 800;
+      transform: translate(-50%, -50%);
+      white-space: nowrap;
+    }
+  </style>
+</head>
+<body>
+
+  <header class="hud-bar">
+    <div class="hud-left">
+      <span class="hud-badge">ASW-0001-N0 Y DES · CONTEXTO GLOBAL (CAJA NEGRA) Y MÁQUINAS DE ESTADOS</span>
+      <span class="hud-lod-indicator" id="lodIndicator">🔭 VISTA MACRO (Acerca el zoom &ge; 105% para ver guardas formales, RNF y riesgos)</span>
+    </div>
+    <div class="hud-controls">
+      <button class="hud-btn" id="btnToggleLOD" onclick="toggleManualLOD()">🔍 Forzar Vista Micro</button>
+      <button class="hud-btn" id="btnZoomOut">−</button>
+      <span id="zoomPct" style="font-size:11.5px;font-weight:900;min-width:42px;text-align:center;">80%</span>
+      <button class="hud-btn" id="btnZoomIn">+</button>
+      <button class="hud-btn" id="btnFit">Ajustar</button>
+    </div>
+  </header>
+
+  <div id="viewport">
+    <div id="canvas">
+
+      <!-- =================================================================
+           PANEL IZQUIERDO: NIVEL 0 — CONTEXTO GLOBAL (CAJA NEGRA)
+           ================================================================= -->
+      <section class="panel-box" style="left:50px; top:65px; width:1110px; height:1340px;">
+        <div class="panel-header">
+          <span>1. CONTEXTO GLOBAL — NIVEL 0 (FRONTERA CAJA NEGRA DE INNOFARMA)</span>
+          <span class="panel-subchip">Equipo 1: Taylor (AUT-0001) + Joshua (AUT-0007)</span>
+        </div>
+
+        <svg style="position:absolute;top:0;left:0;width:1110px;height:1340px;pointer-events:none;z-index:1;">
+          <defs>
+            <marker id="arr" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="6.5" markerHeight="6.5" orient="auto-start-reverse">
+              <path d="M 0 1 L 10 5 L 0 9 z" fill="#0f172a" />
+            </marker>
+          </defs>
+          <!-- Cajera L1 <-> Sistema -->
+          <line x1="250" y1="265" x2="450" y2="540" stroke="#0f172a" stroke-width="2" marker-end="url(#arr)" />
+          <!-- Administradora <-> Sistema -->
+          <line x1="850" y1="265" x2="660" y2="540" stroke="#0f172a" stroke-width="2" marker-end="url(#arr)" />
+          <!-- Cajera L2 <-> Sistema -->
+          <line x1="250" y1="680" x2="365" y2="680" stroke="#0f172a" stroke-width="2" marker-end="url(#arr)" />
+          <!-- Clientes <-> Sistema -->
+          <line x1="860" y1="680" x2="745" y2="680" stroke="#0f172a" stroke-width="2" marker-end="url(#arr)" />
+          <!-- Proveedores <-> Sistema -->
+          <line x1="250" y1="1080" x2="450" y2="830" stroke="#0f172a" stroke-width="2" marker-end="url(#arr)" />
+          <!-- DIGEMID / SUNAT <-> Sistema -->
+          <line x1="850" y1="1080" x2="660" y2="830" stroke="#0f172a" stroke-width="2" marker-end="url(#arr)" />
+        </svg>
+
+        <div class="edge-label" style="left:335px; top:395px;">Ventas y Apertura Caja (LAN)</div>
+        <div class="edge-label" style="left:775px; top:395px;">Supervisión, Compras y Reportes (VPN)</div>
+        <div class="edge-label" style="left:295px; top:650px;">Ventas Remotas (WireGuard)</div>
+        <div class="edge-label" style="left:815px; top:650px;">Solicitud + Receta / Comprobante</div>
+        <div class="edge-label" style="left:335px; top:965px;">Facturas, Lotes y Vencimientos</div>
+        <div class="edge-label" style="left:775px; top:965px;">Formatos POE y Registro Sanitario</div>
+
+        <!-- Actor 1: Cajera L1 -->
+        <div class="arch-node" style="left:45px; top:90px; width:390px; height:175px;">
+          <div class="macro-view">
+            <div class="macro-title">CAJERA SEDE PRINCIPAL (LOCAL 1)</div>
+            <div class="macro-code">[ACT-0002 · RED LAN LOCAL]</div>
+          </div>
+          <div class="micro-view">
+            <div class="micro-title">Cajera Sede Principal — Local 1 (`ACT-0002`)</div>
+            <div class="micro-role">[ACTOR OPERATIVO INTERNO · EQUIPO 1: AUT-0001, AUT-0007]</div>
+            <div class="pill-row">
+              <span class="code-pill">ACT-0002</span>
+              <span class="code-pill">ILA-0005, 0008, 0033..0035</span>
+              <span class="code-pill pill-rnf">RNF-0003 (&le;10 min)</span>
+            </div>
+            <hr class="micro-divider" />
+            <ul class="micro-list">
+              <li>• Registra ventas en mostrador, consulta precios/lotes y realiza cuadre de caja.</li>
+              <li>• <span class="txt-risk">Riesgo perimetral:</span> Restringida por `RNF-0005` (no ve costos ni ganancias).</li>
+            </ul>
+          </div>
+        </div>
+
+        <!-- Actor 2: Administradora -->
+        <div class="arch-node" style="left:675px; top:90px; width:390px; height:175px;">
+          <div class="macro-view">
+            <div class="macro-title">ADMINISTRADORA / PROPIETARIA</div>
+            <div class="macro-code">[ACT-0001 · LOCAL Y REMOTO VPN]</div>
+          </div>
+          <div class="micro-view">
+            <div class="micro-title">Administradora / Propietaria (`ACT-0001`)</div>
+            <div class="micro-role">[ACTOR GERENCIAL · EQUIPO 1: AUT-0001, AUT-0007]</div>
+            <div class="pill-row">
+              <span class="code-pill">ACT-0001</span>
+              <span class="code-pill">EDU-0002 a EDU-0013</span>
+              <span class="code-pill pill-rnf">RNF-0004, RNF-0005, RNF-0007</span>
+            </div>
+            <hr class="micro-divider" />
+            <ul class="micro-list">
+              <li>• Administra catálogo, precios, compras, inventario, usuarios, turnos y reportes.</li>
+              <li>• <span class="txt-risk">Riesgo MRI-RNF-0004 ($1,250):</span> Acceso desde red externa mitigado con VPN y expiración de sesión.</li>
+            </ul>
+          </div>
+        </div>
+
+        <!-- Actor 3: Cajera L2 -->
+        <div class="arch-node" style="left:35px; top:590px; width:245px; height:180px;">
+          <div class="macro-view">
+            <div class="macro-title">CAJERA LOCAL 2</div>
+            <div class="macro-code">[ACT-0002 · SEDE 2 VPN]</div>
+          </div>
+          <div class="micro-view">
+            <div class="micro-title">Cajera Sede 2 (`ACT-0002`)</div>
+            <div class="micro-role">[OPERACIÓN REMOTA VPN]</div>
+            <div class="pill-row">
+              <span class="code-pill">ILA-0005</span>
+              <span class="code-pill pill-rnf">RNF-0001, 0008</span>
+            </div>
+            <hr class="micro-divider" />
+            <ul class="micro-list">
+              <li>• Opera sobre el stock exclusivo del Local 2 vía WireGuard + caché local.</li>
+            </ul>
+          </div>
+        </div>
+
+        <!-- CAJA NEGRA CENTRAL: SISTEMA INNOFARMA -->
+        <div class="arch-node blackbox" style="left:365px; top:540px; width:380px; height:290px;">
+          <div class="macro-view">
+            <div class="macro-title" style="font-size:18px;">SISTEMA INNOFARMA<br/>(CAJA NEGRA NIVEL 0)</div>
+            <div class="macro-code">11 EDU · 44 ILA · 44 ESP · 8 RNF<br/>Servidor Central Local 1 + VPN</div>
+          </div>
+          <div class="micro-view">
+            <div class="micro-title">Sistema Innofarma — Frontera del Sistema (Nivel 0)</div>
+            <div class="micro-role">[CAJA NEGRA CENTRAL · BOTICA MARIFARMA]</div>
+            <div class="pill-row">
+              <span class="code-pill">ASW-0001-N0</span>
+              <span class="code-pill">11 EDU · 44 ILA</span>
+              <span class="code-pill pill-rnf">RNF-0001 a RNF-0008</span>
+            </div>
+            <hr class="micro-divider" />
+            <ul class="micro-list">
+              <li>• Centraliza inventario por lote, ventas, compras, caja, turnos y POE de los 2 locales de Marifarma.</li>
+              <li>• <span class="txt-fort">Fortaleza global:</span> Autonomía local (`S/ 0/mes`), disponibilidad &ge;95% (`RNF-0001`) e integridad ACID (`RNF-0008`).</li>
+              <li>• <span class="txt-risk">Límite arquitectónico:</span> No expone base de datos a Internet ni depende de SaaS externos para vender.</li>
+            </ul>
+          </div>
+        </div>
+
+        <!-- Actor 4: Cliente Final -->
+        <div class="arch-node" style="left:830px; top:590px; width:245px; height:180px;">
+          <div class="macro-view">
+            <div class="macro-title">CLIENTE / PACIENTE</div>
+            <div class="macro-code">[EXTERNO · MOSTRADOR]</div>
+          </div>
+          <div class="micro-view">
+            <div class="micro-title">Cliente / Paciente de Botica</div>
+            <div class="micro-role">[ENTIDAD EXTERNA]</div>
+            <div class="pill-row">
+              <span class="code-pill">EDU-0004, 0008</span>
+              <span class="code-pill">ILA-0005, 0008</span>
+            </div>
+            <hr class="micro-divider" />
+            <ul class="micro-list">
+              <li>• Presenta receta médica (si aplica) y recibe comprobante de venta impreso.</li>
+            </ul>
+          </div>
+        </div>
+
+        <!-- Actor 5: Proveedores -->
+        <div class="arch-node" style="left:45px; top:1080px; width:390px; height:190px;">
+          <div class="macro-view">
+            <div class="macro-title">PROVEEDORES Y DROGUERÍAS</div>
+            <div class="macro-code">[EXTERNO · EDU-0007 / EDU-0009]</div>
+          </div>
+          <div class="micro-view">
+            <div class="micro-title">Proveedores y Laboratorios (`EDU-0007`, `EDU-0009`)</div>
+            <div class="micro-role">[ENTIDAD EXTERNA DE ABASTECIMIENTO]</div>
+            <div class="pill-row">
+              <span class="code-pill">ILA-0017..0020</span>
+              <span class="code-pill">ILA-0025..0028</span>
+              <span class="code-pill pill-risk">MRI P-I: 2.5</span>
+            </div>
+            <hr class="micro-divider" />
+            <ul class="micro-list">
+              <li>• Entregan facturas/guías con número de lote, fecha de vencimiento y costo de adquisición.</li>
+              <li>• <span class="txt-risk">Control perimetral:</span> Validación de RUC único (11 dígitos) y estado `ACTIVO` antes de comprar.</li>
+            </ul>
+          </div>
+        </div>
+
+        <!-- Actor 6: DIGEMID / SUNAT -->
+        <div class="arch-node" style="left:675px; top:1080px; width:390px; height:190px;">
+          <div class="macro-view">
+            <div class="macro-title">DIGEMID / FISCALIZACIÓN POE</div>
+            <div class="macro-code">[ENTE REGULADOR · EDU-0008 / EDU-0012]</div>
+          </div>
+          <div class="micro-view">
+            <div class="micro-title">Entes Reguladores Sanitarios (`DIGEMID` / Normativa POE)</div>
+            <div class="micro-role">[ENTIDAD REGULADORA EXTERNA]</div>
+            <div class="pill-row">
+              <span class="code-pill">EDU-0008, EDU-0012</span>
+              <span class="code-pill">ILA-0041 a ILA-0044</span>
+              <span class="code-pill pill-rnf">RNF-0002, 0008</span>
+            </div>
+            <hr class="micro-divider" />
+            <ul class="micro-list">
+              <li>• Exige registro sanitario vigente, control de temperatura/humedad y actas de baja de lotes vencidos.</li>
+              <li>• <span class="txt-fort">Mitigación:</span> Conservación histórica obligatoria sin borrado físico (`T-007`).</li>
+            </ul>
+          </div>
+        </div>
+      </section>
+
+      <!-- =================================================================
+           PANEL DERECHO: NIVEL 3 — MÁQUINAS DE ESTADOS (DES)
+           ================================================================= -->
+      <section class="panel-box" style="left:1210px; top:65px; width:1140px; height:1340px;">
+        <div class="panel-header">
+          <span>2. MÁQUINAS DE ESTADOS FORMALES (DES — EXIGIDAS EN RETROALIMENTACIÓN.XLSX)</span>
+          <span class="panel-subchip">Equipo 2: Ronald (AUT-0005) + Sebastian (AUT-0004)</span>
+        </div>
+
+        <svg style="position:absolute;top:0;left:0;width:1140px;height:1340px;pointer-events:none;z-index:1;">
+          <!-- Flechas Máquina 1 (Venta) -->
+          <line x1="295" y1="190" x2="430" y2="190" stroke="#0f172a" stroke-width="2" marker-end="url(#arr)" />
+          <line x1="700" y1="190" x2="825" y2="190" stroke="#0f172a" stroke-width="2" marker-end="url(#arr)" />
+          <line x1="565" y1="265" x2="565" y2="395" stroke="#0f172a" stroke-width="2" marker-end="url(#arr)" />
+          <line x1="430" y1="470" x2="295" y2="470" stroke="#0f172a" stroke-width="2" marker-end="url(#arr)" />
+          <line x1="700" y1="470" x2="825" y2="470" stroke="#0f172a" stroke-width="2.4" marker-end="url(#arr)" />
+          <line x1="960" y1="545" x2="960" y2="635" stroke="#0f172a" stroke-width="2" stroke-dasharray="6,4" marker-end="url(#arr)" />
+
+          <!-- Línea divisoria entre Máquina 1 y Máquina 2 -->
+          <line x1="25" y1="765" x2="1115" y2="765" stroke="#0f172a" stroke-width="2" stroke-dasharray="8,6" />
+
+          <!-- Flechas Máquina 2 (Producto / Medicamento / Lote) -->
+          <line x1="295" y1="910" x2="430" y2="910" stroke="#0f172a" stroke-width="2" marker-end="url(#arr)" />
+          <line x1="700" y1="910" x2="825" y2="910" stroke="#0f172a" stroke-width="2" marker-end="url(#arr)" />
+          <line x1="960" y1="990" x2="960" y2="1120" stroke="#0f172a" stroke-width="2" marker-end="url(#arr)" />
+          <line x1="825" y1="1195" x2="700" y2="1195" stroke="#0f172a" stroke-width="2" marker-end="url(#arr)" />
+          <line x1="430" y1="1195" x2="295" y2="1195" stroke="#0f172a" stroke-width="2" marker-end="url(#arr)" />
+        </svg>
+
+        <div class="edge-label" style="left:362px; top:168px;">Clic Confirmar (T-016)</div>
+        <div class="edge-label" style="left:762px; top:168px;">Falta Stock / Receta</div>
+        <div class="edge-label" style="left:565px; top:330px;">BEGIN + SELECT FOR UPDATE</div>
+        <div class="edge-label" style="left:362px; top:445px;">Error Red/BD (ROLLBACK)</div>
+        <div class="edge-label" style="left:762px; top:445px;">COMMIT 7 Tablas OK</div>
+        <div class="edge-label" style="left:960px; top:590px;">Anulación (ILA-0007)</div>
+
+        <!-- SUBTÍTULO MÁQUINA 1 -->
+        <div style="position:absolute;left:35px;top:60px;font-size:12.5px;font-weight:900;background:#e0f2fe;border:1.5px solid #0f172a;padding:3px 10px;">
+          DES-0001 · AUTÓMATA DEL CICLO DE VIDA DE LA VENTA (EDU-0004 · ILA-0005..0008 · RNF-0008)
+        </div>
+
+        <!-- Estado V1 -->
+        <div class="arch-node" style="left:35px; top:110px; width:260px; height:155px;">
+          <div class="macro-view">
+            <div class="macro-title">1. EN EDICIÓN</div>
+            <div class="macro-code">[SESIÓN CAJA ABIERTA]</div>
+          </div>
+          <div class="micro-view">
+            <div class="micro-title">1. Venta en Edición</div>
+            <div class="micro-role">[ESTADO INICIAL · ILA-0005, 0033]</div>
+            <hr class="micro-divider" />
+            <ul class="micro-list">
+              <li>• Requiere `sesiones_caja.estado = 'ABIERTA'`.</li>
+              <li>• Selección de presentación y cálculo de subtotal (`RNF-0003`).</li>
+            </ul>
+          </div>
+        </div>
+
+        <!-- Estado V2 -->
+        <div class="arch-node" style="left:430px; top:110px; width:270px; height:155px;">
+          <div class="macro-view">
+            <div class="macro-title">2. EN VALIDACIÓN</div>
+            <div class="macro-code">[BOTÓN BLOQUEADO T-016]</div>
+          </div>
+          <div class="micro-view">
+            <div class="micro-title">2. En Validación de Guardas</div>
+            <div class="micro-role">[EVALUACIÓN EN SERVIDOR]</div>
+            <hr class="micro-divider" />
+            <ul class="micro-list">
+              <li>• Verifica `rol_permiso` (`RNF-0005`), receta (`EDU-0008`) y stock en `lotes_producto`.</li>
+              <li>• Deshabilita botón contra doble clic (`T-016`).</li>
+            </ul>
+          </div>
+        </div>
+
+        <!-- Estado V3 -->
+        <div class="arch-node" style="left:825px; top:110px; width:270px; height:155px;">
+          <div class="macro-view">
+            <div class="macro-title">3. RECHAZADA</div>
+            <div class="macro-code">[MSG-VEN-001 · SIN CAMBIOS]</div>
+          </div>
+          <div class="micro-view">
+            <div class="micro-title">3. Operación Rechazada</div>
+            <div class="micro-role">[GUARDA NO CUMPLIDA]</div>
+            <hr class="micro-divider" />
+            <ul class="micro-list">
+              <li>• Si `cantidad > stock` o falta receta, aborta sin tocar `BDD_0001` y retorna a Edición.</li>
+            </ul>
+          </div>
+        </div>
+
+        <!-- Estado V4 -->
+        <div class="arch-node" style="left:35px; top:395px; width:260px; height:155px;">
+          <div class="macro-view">
+            <div class="macro-title">4. REVERTIDA (ROLLBACK)</div>
+            <div class="macro-code">[FALLO RED/BD · T-006]</div>
+          </div>
+          <div class="micro-view">
+            <div class="micro-title">4. Revertida por Rollback</div>
+            <div class="micro-role">[PROTECCIÓN ACID · RNF-0008]</div>
+            <hr class="micro-divider" />
+            <ul class="micro-list">
+              <li>• Ante caída de red o error SQL, revierte todo al estado previo (`MSG-SYS-001`).</li>
+            </ul>
+          </div>
+        </div>
+
+        <!-- Estado V5 -->
+        <div class="arch-node blackbox" style="left:430px; top:395px; width:270px; height:155px;">
+          <div class="macro-view">
+            <div class="macro-title">5. EN TRANSACCIÓN ACID</div>
+            <div class="macro-code">[SELECT FOR UPDATE · T-009]</div>
+          </div>
+          <div class="micro-view">
+            <div class="micro-title">5. Bloqueo Pesimista ACID</div>
+            <div class="micro-role">[SECCIÓN CRÍTICA · EXP. $1,875]</div>
+            <hr class="micro-divider" />
+            <ul class="micro-list">
+              <li>• Bloquea fila en `lotes_producto` (FEFO) e inserta en `ventas`, `movimientos_inventario`, `movimientos_caja` y `bitacora_auditoria`.</li>
+            </ul>
+          </div>
+        </div>
+
+        <!-- Estado V6 -->
+        <div class="arch-node" style="left:825px; top:395px; width:270px; height:150px;">
+          <div class="macro-view">
+            <div class="macro-title">6. CONFIRMADA (ACTIVA)</div>
+            <div class="macro-code">[COMMIT + COMPROBANTE]</div>
+          </div>
+          <div class="micro-view">
+            <div class="micro-title">6. Venta Confirmada + Ticket</div>
+            <div class="micro-role">[ESTADO PERSISTIDO · ILA-0008]</div>
+            <hr class="micro-divider" />
+            <ul class="micro-list">
+              <li>• Emite comprobante (`comprobantes_venta`); permite reimpresión si falla papel (`MRI-EDU-0002`).</li>
+            </ul>
+          </div>
+        </div>
+
+        <!-- Estado V7 -->
+        <div class="arch-node" style="left:825px; top:635px; width:270px; height:110px;">
+          <div class="macro-view">
+            <div class="macro-title">7. ANULADA (HISTÓRICA)</div>
+            <div class="macro-code">[REVERSO STOCK/CAJA · T-007]</div>
+          </div>
+          <div class="micro-view">
+            <div class="micro-title">7. Venta Anulada (`ILA-0007`)</div>
+            <div class="micro-role">[BAJA LÓGICA AUDITADA]</div>
+            <ul class="micro-list">
+              <li>• Reintegra lote, revierte caja y exige motivo en `bitacora_auditoria`.</li>
+            </ul>
+          </div>
+        </div>
+
+        <!-- SUBTÍTULO MÁQUINA 2 -->
+        <div style="position:absolute;left:35px;top:785px;font-size:12.5px;font-weight:900;background:#d1fae5;border:1.5px solid #0f172a;padding:3px 10px;">
+          DES-0002 · AUTÓMATA DE PRODUCTO, MEDICAMENTO Y LOTE DE INVENTARIO (EDU-0005 · EDU-0008 · EDU-0002 · EDU-0003)
+        </div>
+
+        <div class="edge-label" style="left:362px; top:885px;">Presentaciones (ILA-0021)</div>
+        <div class="edge-label" style="left:762px; top:885px;">Ingreso Lote (ILA-0001/0017)</div>
+        <div class="edge-label" style="left:960px; top:1055px;">Alerta Fecha Servidor (T-013)</div>
+        <div class="edge-label" style="left:762px; top:1170px;">Fecha &lt; CURRENT_DATE</div>
+        <div class="edge-label" style="left:362px; top:1170px;">Baja con Motivo (ILA-0004)</div>
+
+        <!-- Estado P1 -->
+        <div class="arch-node" style="left:35px; top:835px; width:260px; height:155px;">
+          <div class="macro-view">
+            <div class="macro-title">1. REGISTRADO EN CATÁLOGO</div>
+            <div class="macro-code">[EDU-0005 / EDU-0008]</div>
+          </div>
+          <div class="micro-view">
+            <div class="micro-title">1. Producto / Medicamento Maestro</div>
+            <div class="micro-role">[ILA-0009, ILA-0021 · SIN STOCK AÚN]</div>
+            <hr class="micro-divider" />
+            <ul class="micro-list">
+              <li>• Define principio activo, concentración, registro sanitario y código de barras único.</li>
+            </ul>
+          </div>
+        </div>
+
+        <!-- Estado P2 -->
+        <div class="arch-node" style="left:430px; top:835px; width:270px; height:155px;">
+          <div class="macro-view">
+            <div class="macro-title">2. CON PRESENTACIONES</div>
+            <div class="macro-code">[CAJA / BLÍSTER / UNIDAD]</div>
+          </div>
+          <div class="micro-view">
+            <div class="micro-title">2. Presentaciones Configuradas</div>
+            <div class="micro-role">[TABLA presentaciones_producto]</div>
+            <hr class="micro-divider" />
+            <ul class="micro-list">
+              <li>• Define precio de venta y unidades contenidas por presentación antes de admitir compras.</li>
+            </ul>
+          </div>
+        </div>
+
+        <!-- Estado P3 -->
+        <div class="arch-node blackbox" style="left:825px; top:835px; width:270px; height:155px;">
+          <div class="macro-view">
+            <div class="macro-title">3. LOTE VIGENTE DISPONIBLE</div>
+            <div class="macro-code">[EDU-0002 · DESPACHO FEFO]</div>
+          </div>
+          <div class="micro-view">
+            <div class="micro-title">3. Lote Activo en `lotes_producto`</div>
+            <div class="micro-role">[ILA-0001, ILA-0017 · STOCK &gt; 0]</div>
+            <hr class="micro-divider" />
+            <ul class="micro-list">
+              <li>• Habilitado para venta; valida al ingresar que no esté ya vencido (`MRI-ILA-0001`).</li>
+            </ul>
+          </div>
+        </div>
+
+        <!-- Estado P4 -->
+        <div class="arch-node" style="left:825px; top:1120px; width:270px; height:155px;">
+          <div class="macro-view">
+            <div class="macro-title">4. PRÓXIMO A VENCER</div>
+            <div class="macro-code">[SEMÁFORO ALERTA · ILA-0002]</div>
+          </div>
+          <div class="micro-view">
+            <div class="micro-title">4. Lote Próximo a Vencer</div>
+            <div class="micro-role">[PRIORIDAD FEFO · T-013 ($1,000)]</div>
+            <hr class="micro-divider" />
+            <ul class="micro-list">
+              <li>• Calculado con `CURRENT_DATE` del servidor y parámetro en `configuracion_sistema`.</li>
+            </ul>
+          </div>
+        </div>
+
+        <!-- Estado P5 -->
+        <div class="arch-node" style="left:430px; top:1120px; width:270px; height:155px;">
+          <div class="macro-view">
+            <div class="macro-title">5. VENCIDO BLOQUEADO</div>
+            <div class="macro-code">[BLOQUEO VENTA · MRI-EDU-0007]</div>
+          </div>
+          <div class="micro-view">
+            <div class="micro-title">5. Lote Vencido Bloqueado</div>
+            <div class="micro-role">[EXP. $750 · IMPEDIDO DE VENDER]</div>
+            <hr class="micro-divider" />
+            <ul class="micro-list">
+              <li>• El sistema impide su selección en ventas aunque aún no haya sido dado de baja manual.</li>
+            </ul>
+          </div>
+        </div>
+
+        <!-- Estado P6 -->
+        <div class="arch-node" style="left:35px; top:1120px; width:260px; height:155px;">
+          <div class="macro-view">
+            <div class="macro-title">6. LOTE INACTIVO / RECHAZADO</div>
+            <div class="macro-code">[EDU-0003 · ILA-0004 · T-007]</div>
+          </div>
+          <div class="micro-view">
+            <div class="micro-title">6. Baja Lógica Sanitaria (`ILA-0004`)</div>
+            <div class="micro-role">[CONSERVA PRODUCTO E HISTORIAL]</div>
+            <hr class="micro-divider" />
+            <ul class="micro-list">
+              <li>• Registra motivo en `productos_rechazados` y `actas_baja_sanitaria` sin desactivar otros lotes vigentes del producto (`MRI-ILA-0004`).</li>
+            </ul>
+          </div>
+        </div>
+
+      </section>
+
+    </div>
+  </div>
+
+  <script>
+    const viewport = document.getElementById('viewport');
+    const canvas = document.getElementById('canvas');
+    const zoomPct = document.getElementById('zoomPct');
+    const lodIndicator = document.getElementById('lodIndicator');
+    const btnToggleLOD = document.getElementById('btnToggleLOD');
+
+    let scale = 0.76;
+    let panX = 35;
+    let panY = 50;
+    let isDragging = false;
+    let startX = 0;
+    let startY = 0;
+    let manualLOD = null;
+    const LOD_THRESHOLD = 1.04;
+
+    window.applySemanticFilter = function(cat) {
+      const nodes = document.querySelectorAll('.arch-node');
+      if (!cat || cat === 'ALL') {
+        nodes.forEach(n => n.classList.remove('sem-highlight', 'sem-dimmed'));
+        return;
+      }
+      nodes.forEach(n => {
+        const txt = (n.textContent || '').toUpperCase();
+        let match = false;
+        if (cat === 'DOM_UI' && (txt.includes('ACT-0001') || txt.includes('ACT-0002') || txt.includes('CLIENTE') || txt.includes('CARRITO'))) match = true;
+        else if (cat === 'DOM_SEC' && (txt.includes('VPN') || txt.includes('RNF-0004') || txt.includes('RNF-0005') || txt.includes('SESIÓN'))) match = true;
+        else if (cat === 'DOM_CORE' && (txt.includes('EDU-') || txt.includes('FEFO') || txt.includes('LOTE') || txt.includes('INNOFARMA'))) match = true;
+        else if (cat === 'DOM_DATA' && (txt.includes('ACID') || txt.includes('COMMIT') || txt.includes('ROLLBACK') || txt.includes('RNF-0008'))) match = true;
+        else if (cat === 'DOM_HW' && (txt.includes('RED LAN') || txt.includes('SERVIDOR') || txt.includes('RNF-0001'))) match = true;
+        else if (cat === 'STATE_RISK' && (txt.includes('RIESGO') || txt.includes('MRI-') || txt.includes('BLOQUEADO') || txt.includes('ROLLBACK'))) match = true;
+        else if (cat === 'STATE_REV' && (txt.includes('REVISIÓN') || txt.includes('DIGEMID') || txt.includes('SUNAT') || txt.includes('OFFLINE'))) match = true;
+        else if (cat.startsWith('REL_')) match = true;
+        n.classList.toggle('sem-highlight', match);
+        n.classList.toggle('sem-dimmed', !match);
+      });
+    };
+
+    window.addEventListener('message', (ev) => {
+      if (ev.data && ev.data.type === 'APPLY_SEMANTIC_FILTER') {
+        window.applySemanticFilter(ev.data.category);
+      }
+    });
+
+    function updateTransform() {
+      canvas.style.transform = `translate(${panX}px, ${panY}px) scale(${scale})`;
+      zoomPct.textContent = `${Math.round(scale * 100)}%`;
+      const isMicro = manualLOD ? (manualLOD === 'MICRO') : (scale >= LOD_THRESHOLD);
+      document.body.classList.toggle('lod-micro', isMicro);
+      lodIndicator.classList.toggle('micro-active', isMicro);
+      if (isMicro) {
+        lodIndicator.innerHTML = '🔬 <strong>VISTA MICRO ACTIVA:</strong> Mostrando guardas formales, RNF, tablas y mitigaciones de riesgos por estado';
+        btnToggleLOD.textContent = '🔭 Volver a Vista Macro';
+        btnToggleLOD.classList.add('active');
+      } else {
+        lodIndicator.innerHTML = '🔭 <strong>VISTA MACRO (Esqueleto General):</strong> Acerca el zoom (&ge; 104%) para desplegar el detalle de cada actor y estado';
+        btnToggleLOD.textContent = '🔍 Forzar Vista Micro';
+        btnToggleLOD.classList.remove('active');
+      }
+    }
+
+    function fitToScreen() {
+      const vw = viewport.clientWidth;
+      const vh = viewport.clientHeight - 90;
+      scale = Math.min(vw / 2400, vh / 1480) * 0.95;
+      panX = (vw - 2400 * scale) / 2;
+      panY = 50 + (vh - 1480 * scale) / 2;
+      manualLOD = null;
+      updateTransform();
+    }
+
+    function toggleManualLOD() {
+      manualLOD = document.body.classList.contains('lod-micro') ? 'MACRO' : 'MICRO';
+      updateTransform();
+    }
+
+    viewport.addEventListener('wheel', (e) => {
+      e.preventDefault();
+      const factor = e.deltaY < 0 ? 1.12 : 0.89;
+      const newScale = Math.min(2.3, Math.max(0.35, scale * factor));
+      const rect = viewport.getBoundingClientRect();
+      const mx = e.clientX - rect.left;
+      const my = e.clientY - rect.top;
+      panX = mx - (mx - panX) * (newScale / scale);
+      panY = my - (my - panY) * (newScale / scale);
+      scale = newScale;
+      manualLOD = null;
+      updateTransform();
+    }, { passive: false });
+
+    viewport.addEventListener('mousedown', (e) => {
+      if (e.target.closest('.hud-bar')) return;
+      isDragging = true;
+      startX = e.clientX - panX;
+      startY = e.clientY - panY;
+      viewport.classList.add('grabbing');
+    });
+
+    window.addEventListener('mousemove', (e) => {
+      if (!isDragging) return;
+      panX = e.clientX - startX;
+      panY = e.clientY - startY;
+      updateTransform();
+    });
+
+    window.addEventListener('mouseup', () => {
+      isDragging = false;
+      viewport.classList.remove('grabbing');
+    });
+
+    document.getElementById('btnZoomIn').addEventListener('click', () => { scale = Math.min(2.3, scale * 1.18); manualLOD = null; updateTransform(); });
+    document.getElementById('btnZoomOut').addEventListener('click', () => { scale = Math.max(0.35, scale * 0.84); manualLOD = null; updateTransform(); });
+    document.getElementById('btnFit').addEventListener('click', fitToScreen);
+
+    window.addEventListener('load', fitToScreen);
+    window.addEventListener('resize', fitToScreen);
+  </script>
+</body>
+</html>

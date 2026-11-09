@@ -619,17 +619,19 @@
       border-color: #0d9488;
     }
 
-    /* PANEL FLOTANTE DE SEMÁNTICA DE COLORES */
+    /* PANEL FLOTANTE INTERACTIVO DE SEMÁNTICA RELACIONAL */
     .palette-popover {
       position: absolute;
-      top: 60px;
+      top: 58px;
       right: 16px;
-      width: 340px;
+      width: 390px;
+      max-height: calc(100vh - 76px);
+      overflow-y: auto;
       background: #ffffff;
-      border: 1.5px solid #0d9488;
+      border: 2px solid #0f172a;
       border-radius: 10px;
       padding: 14px;
-      box-shadow: 0 10px 26px rgba(15, 23, 42, 0.14);
+      box-shadow: 6px 6px 0px #0f172a;
       z-index: 250;
       display: none;
     }
@@ -640,34 +642,77 @@
 
     .palette-popover h3 {
       font-size: 12.5px;
-      font-weight: 800;
-      color: #0f766e;
-      margin-bottom: 10px;
+      font-weight: 900;
+      color: #0f172a;
+      text-transform: uppercase;
+      letter-spacing: 0.3px;
+      margin-bottom: 4px;
       display: flex;
       align-items: center;
       justify-content: space-between;
     }
 
+    .palette-subhint {
+      font-size: 10.5px;
+      color: #475569;
+      font-weight: 600;
+      margin-bottom: 10px;
+      padding-bottom: 8px;
+      border-bottom: 1.5px solid #e2e8f0;
+    }
+
+    .palette-section-title {
+      font-size: 10px;
+      font-weight: 800;
+      text-transform: uppercase;
+      letter-spacing: 0.6px;
+      color: #0f766e;
+      margin: 8px 0 6px 0;
+    }
+
     .palette-row {
       display: flex;
       align-items: flex-start;
-      gap: 9px;
-      margin-bottom: 8px;
+      gap: 10px;
+      padding: 7px 9px;
+      margin-bottom: 5px;
+      border: 1.5px solid transparent;
+      border-radius: 7px;
       font-size: 11px;
       line-height: 1.35;
       color: #334155;
+      cursor: pointer;
+      transition: all 0.14s ease;
     }
 
-    .palette-row:last-child {
-      margin-bottom: 0;
+    .palette-row:hover {
+      background: #f8fafc;
+      border-color: #cbd5e1;
+      transform: translateX(2px);
+    }
+
+    .palette-row.active-sem {
+      background: #fefce8;
+      border-color: #0f172a;
+      box-shadow: 2px 2px 0px #0f172a;
     }
 
     .swatch {
-      width: 14px;
-      height: 14px;
+      width: 18px;
+      height: 18px;
       border-radius: 4px;
       flex-shrink: 0;
-      margin-top: 2px;
+      margin-top: 1px;
+    }
+
+    .swatch-line {
+      width: 22px;
+      height: 18px;
+      flex-shrink: 0;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      margin-top: 1px;
     }
 
     #diagram-viewer {
@@ -751,8 +796,46 @@
 
     <nav class="sidebar-menu" id="sidebarMenu">
       <div class="section-root-title">
-        <span>📁 VISTAS</span>
+        <span>📁 VISTAS Y ARQUITECTURA FINAL</span>
         <span style="font-weight:600;font-size:10px;color:#0f766e;">Catálogo V01.10</span>
+      </div>
+
+      <!-- ============================================================ -->
+      <!-- 0. ARQUITECTURA FINAL (ASW-0001 · ZOOM SEMÁNTICO + EVOLUCIÓN) -->
+      <!-- ============================================================ -->
+      <div class="folder-group open" id="group-arq-final">
+        <div class="folder-header" onclick="toggleFolder('group-arq-final')">
+          <div class="folder-title-row">
+            <span class="folder-arrow">▼</span>
+            <span class="folder-name">0. Arquitectura Final (ASW-0001)</span>
+          </div>
+          <span class="folder-badge">Zoom LOD • 3</span>
+        </div>
+        <div class="folder-items">
+          <div class="menu-item official-item active" onclick="loadDiagram('fig0_1_asw_capas_definitiva.html', this, 'ASW-0001-N1 (V01.00): Arquitectura en 5 Capas con RF, RNF, Fortalezas, Riesgos MRI y Zoom Semántico')">
+            <div class="item-header-row">
+              <span class="item-title">0.1 Arquitectura en 5 Capas (N1)</span>
+              <span class="tag-pill tag-venta">V00.01&rarr;V01.00</span>
+            </div>
+            <span class="item-sub">CR &rarr; 5 Capas (RF + RNF + Fortalezas + Riesgos MRI + Revisión R1–R6 y 4 Equipos)</span>
+          </div>
+
+          <div class="menu-item official-item" onclick="loadDiagram('fig0_2_asw_contexto_modular_zoom.html', this, 'ASW-0001-N2 (V01.00): Contexto Modular Centrado en Datos con Zoom Semántico (Macro Esqueleto / Micro Detalle)')">
+            <div class="item-header-row">
+              <span class="item-title">0.2 Contexto Modular Zoom (N2)</span>
+              <span class="tag-pill tag-medicamento">Macro / Micro</span>
+            </div>
+            <span class="item-sub">De lejos esqueleto general; al hacer zoom muestra EDU, ILA, ESP, RNF, tablas y riesgos</span>
+          </div>
+
+          <div class="menu-item" onclick="loadDiagram('fig0_3_asw_contexto_global_n0.html', this, 'ASW-0001-N0 y DES: Contexto Global (Caja Negra Nivel 0) y Máquinas de Estados de Venta y Lote')">
+            <div class="item-header-row">
+              <span class="item-title">0.3 Nivel 0 + Máquinas Estado</span>
+              <span class="tag-pill tag-auth">Nivel 0 + DES</span>
+            </div>
+            <span class="item-sub">Frontera Caja Negra de Innofarma y autómatas finitos de Venta y Producto/Lote</span>
+          </div>
+        </div>
       </div>
 
       <!-- ============================================================ -->
@@ -767,7 +850,7 @@
           <span class="folder-badge">V01.00 + 4</span>
         </div>
         <div class="folder-items">
-          <div class="menu-item official-item active" onclick="loadDiagram('fig5_1_vista_fisica_despliegue.html', this, 'Vista Física V01.00: Arquitectura de Despliegue de 2 Locales, Admin Remota y WireGuard')">
+          <div class="menu-item official-item" onclick="loadDiagram('fig5_1_vista_fisica_despliegue.html', this, 'Vista Física V01.00: Arquitectura de Despliegue de 2 Locales, Admin Remota y WireGuard')">
             <div class="item-header-row">
               <span class="item-title">Vista Física Oficial (V01.00)</span>
               <span class="tag-pill tag-red">Oficial • VPN</span>
@@ -1005,8 +1088,8 @@
     <header class="top-bar">
       <div class="top-bar-left">
         <button class="btn-toggle-sidebar" onclick="toggleSidebar()" title="Mostrar / ocultar panel lateral (Tecla M)">☰ Menú (M)</button>
-        <span class="top-bar-badge" id="top-badge">VISTA FÍSICA</span>
-        <h2 id="top-title">Vista Física V01.00: Arquitectura de Despliegue de 2 Locales, Admin Remota y WireGuard</h2>
+        <span class="top-bar-badge" id="top-badge" style="background:#0f172a;">ARQ. FINAL ASW-0001</span>
+        <h2 id="top-title">ASW-0001-N1 (V01.00): Arquitectura en 5 Capas con RF, RNF, Fortalezas, Riesgos MRI y Zoom Semántico</h2>
       </div>
       <div class="top-bar-actions">
         <button class="btn-top" id="btnPalette" onclick="togglePalettePopover()">🎨 Semántica</button>
@@ -1015,45 +1098,85 @@
       </div>
     </header>
 
-    <!-- POPOVER EXPLICATIVO DE COLORES SEMÁNTICOS -->
+    <!-- POPOVER INTERACTIVO DE SEMÁNTICA RELACIONAL Y ARQUITECTÓNICA -->
     <div class="palette-popover" id="palettePopover">
       <h3>
-        <span>Paleta Semántica — Marifarma Salud</span>
-        <button onclick="togglePalettePopover()" style="background:none;border:none;font-size:14px;cursor:pointer;color:#64748b;">✕</button>
+        <span>Semántica Relacional y de Módulos</span>
+        <div style="display:flex;gap:6px;align-items:center;">
+          <button onclick="selectSemanticItem('ALL', null)" style="background:#0f172a;color:#fff;border:none;border-radius:4px;padding:3px 7px;font-size:10px;font-weight:700;cursor:pointer;">Ver Todo</button>
+          <button onclick="togglePalettePopover()" style="background:none;border:none;font-size:14px;cursor:pointer;color:#64748b;">✕</button>
+        </div>
       </h3>
-      <div class="palette-row">
-        <span class="swatch" style="background:#ccfbf1;border:1.5px solid #0d9488;"></span>
-        <div><strong>Teal Clínico (Operaciones y POS):</strong> Ventas, compras, atención en mostrador PWA y backend Laravel 11.</div>
+      <div class="palette-subhint">Haz clic en cualquier elemento para resaltar sus módulos y relaciones en el diagrama activo.</div>
+
+      <div class="palette-section-title">1. Relaciones y Flujos de Comunicación</div>
+
+      <div class="palette-row" onclick="selectSemanticItem('REL_INTRA', this)">
+        <span class="swatch-line">
+          <svg width="22" height="12"><line x1="0" y1="6" x2="18" y2="6" stroke="#047857" stroke-width="3"/><polygon points="15,2 22,6 15,10" fill="#047857"/></svg>
+        </span>
+        <div><strong>Relación Funcional entre Módulos (EDU ↔ EDU):</strong> Intercambio de catálogo, incremento/descuento de stock por lote FEFO, turnos y controles POE.</div>
       </div>
-      <div class="palette-row">
-        <span class="swatch" style="background:#d1fae5;border:1.5px solid #059669;"></span>
-        <div><strong>Verde Farmacia (Inventario y Catálogo):</strong> Medicamentos DIGEMID, lotes FEFO, productos, proveedores y PostgreSQL/IndexedDB.</div>
+
+      <div class="palette-row" onclick="selectSemanticItem('REL_INTER', this)">
+        <span class="swatch-line">
+          <svg width="22" height="12"><line x1="0" y1="6" x2="18" y2="6" stroke="#0f172a" stroke-width="2.5" stroke-dasharray="4 3"/><polygon points="15,2 22,6 15,10" fill="#0f172a"/></svg>
+        </span>
+        <div><strong>Flujo de Acceso y Seguridad entre Capas:</strong> Peticiones desde terminales web, túnel VPN WireGuard y validación de permisos por rol.</div>
       </div>
-      <div class="palette-row">
-        <span class="swatch" style="background:#fef3c7;border:1.5px solid #d97706;"></span>
-        <div><strong>Ámbar Financiero (Caja y Alcance):</strong> Apertura de turno, movimientos monetarios, arqueo ciego y notas de alcance.</div>
+
+      <div class="palette-row" onclick="selectSemanticItem('REL_DATA', this)">
+        <span class="swatch-line">
+          <svg width="22" height="12"><line x1="0" y1="6" x2="18" y2="6" stroke="#6d28d9" stroke-width="3"/><polygon points="15,2 22,6 15,10" fill="#6d28d9"/></svg>
+        </span>
+        <div><strong>Persistencia Transaccional ACID y Respaldo:</strong> Escritura atómica en base de datos central, bitácora forense inmutable y copia diaria 24h.</div>
       </div>
-      <div class="palette-row">
-        <span class="swatch" style="background:#e0e7ff;border:1.5px solid #4338ca;"></span>
-        <div><strong>Índigo Seguridad (Control y POE):</strong> Gestión de accesos RBAC, reportes gerenciales, cumplimiento POE y administración remota.</div>
+
+      <div class="palette-section-title">2. Dominios y Estados Arquitectónicos</div>
+
+      <div class="palette-row" onclick="selectSemanticItem('DOM_UI', this)">
+        <span class="swatch" style="background:#dbeafe;border:2px solid #1d4ed8;"></span>
+        <div><strong>Interacción y Terminales Web (Capa 1):</strong> Puntos de atención en Local 1 (LAN) y Local 2 (VPN), consola administrativa y cola contingente.</div>
       </div>
-      <div class="palette-row">
-        <span class="swatch" style="background:#e0f2fe;border:1.5px solid #0284c7;"></span>
-        <div><strong>Azul Conectividad (Red y VPN):</strong> Routers LAN, Internet pública y túneles criptográficos WireGuard (UDP 51820).</div>
+
+      <div class="palette-row" onclick="selectSemanticItem('DOM_SEC', this)">
+        <span class="swatch" style="background:#fef3c7;border:2px solid #b45309;"></span>
+        <div><strong>Seguridad, Red Privada y Accesos (Capa 2):</strong> Concentrador VPN UDP 51820, controlador web, autenticación RBAC (EDU-0006) y auditoría.</div>
       </div>
-      <div class="palette-row">
-        <span class="swatch" style="background:#f1f5f9;border:1.5px solid #475569;"></span>
-        <div><strong>Pizarra Hardware (Equipos y USB):</strong> Lenovo ThinkCentre Neo 50s, lector EAN-13 USB HID e impresora térmica 80mm.</div>
+
+      <div class="palette-row" onclick="selectSemanticItem('DOM_CORE', this)">
+        <span class="swatch" style="background:#d1fae5;border:2px solid #047857;"></span>
+        <div><strong>Núcleo de Dominio Farmacéutico (Capa 3):</strong> Módulos de catálogo, compras, inventario por lotes FEFO, ventas POS, caja, reportes y POE.</div>
+      </div>
+
+      <div class="palette-row" onclick="selectSemanticItem('DOM_DATA', this)">
+        <span class="swatch" style="background:#ede9fe;border:2px solid #6d28d9;"></span>
+        <div><strong>Persistencia y Datos (Capa 4 · BDD_0001):</strong> Motor PostgreSQL 16 (marifarma_gestion_db), bitácora de auditoría, índices FEFO y caché local.</div>
+      </div>
+
+      <div class="palette-row" onclick="selectSemanticItem('DOM_HW', this)">
+        <span class="swatch" style="background:#e2e8f0;border:2px solid #334155;"></span>
+        <div><strong>Infraestructura Física Confirmada (Capa 5):</strong> 2x PC Lenovo ThinkCentre i3 (Local 1 Servidor y Local 2 Cliente), UPS 1000VA y backup.</div>
+      </div>
+
+      <div class="palette-row" onclick="selectSemanticItem('STATE_RISK', this)">
+        <span class="swatch" style="background:#fee2e2;border:2px solid #dc2626;"></span>
+        <div><strong>Puntos con Riesgo Crítico (Matrices MRI):</strong> Componentes expuestos a caída de enlace WAN, colisión de stock simultáneo o corte eléctrico.</div>
+      </div>
+
+      <div class="palette-row" onclick="selectSemanticItem('STATE_REV', this)">
+        <span class="swatch" style="background:#fef08a;border:2px dashed #d97706;"></span>
+        <div><strong>Decisiones Bajo Revisión (R1 a R6):</strong> Puntos abiertos en validación final con el cliente y ajuste puntual del Catálogo de Requisitos.</div>
       </div>
     </div>
 
-    <iframe id="diagram-viewer" src="fig5_1_vista_fisica_despliegue.html" title="Visor de Diagramas de Arquitectura"></iframe>
+    <iframe id="diagram-viewer" src="fig0_1_asw_capas_definitiva.html" title="Visor de Diagramas de Arquitectura"></iframe>
   </main>
 
   <div class="toast" id="toastMsg">✓ Enlace copiado al portapapeles</div>
 
   <script>
-    let currentDiagramPath = 'fig5_1_vista_fisica_despliegue.html';
+    let currentDiagramPath = 'fig0_1_asw_capas_definitiva.html';
     let toastTimer = null;
 
     function showToast(text) {
@@ -1083,7 +1206,10 @@
       document.getElementById('top-title').textContent = title || path;
 
       const badge = document.getElementById('top-badge');
-      if (path.startsWith('fig5')) {
+      if (path.startsWith('fig0')) {
+        badge.textContent = 'ARQ. FINAL ASW-0001';
+        badge.style.background = '#0f172a';
+      } else if (path.startsWith('fig5')) {
         badge.textContent = 'VISTA FÍSICA';
         badge.style.background = '#0284c7';
       } else if (path.startsWith('fig1') || path.startsWith('fig3')) {
@@ -1164,8 +1290,37 @@
       }, 240);
     }
 
+    let activeSemanticCat = 'ALL';
+
     function togglePalettePopover() {
       document.getElementById('palettePopover').classList.toggle('visible');
+    }
+
+    function selectSemanticItem(category, rowEl) {
+      if (rowEl && activeSemanticCat === category) {
+        category = 'ALL';
+      }
+      activeSemanticCat = category;
+
+      document.querySelectorAll('#palettePopover .palette-row').forEach(r => r.classList.remove('active-sem'));
+      if (rowEl && category !== 'ALL') {
+        rowEl.classList.add('active-sem');
+      }
+
+      const iframe = document.getElementById('diagram-viewer');
+      try {
+        if (iframe && iframe.contentWindow) {
+          if (typeof iframe.contentWindow.applySemanticFilter === 'function') {
+            iframe.contentWindow.applySemanticFilter(category);
+          } else {
+            iframe.contentWindow.postMessage({ type: 'SEMANTIC_FILTER', category }, '*');
+          }
+        }
+      } catch (err) {
+        if (iframe && iframe.contentWindow) {
+          iframe.contentWindow.postMessage({ type: 'SEMANTIC_FILTER', category }, '*');
+        }
+      }
     }
 
     function openDiagramInNewTab() {

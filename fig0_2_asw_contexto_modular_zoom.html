@@ -1,0 +1,1338 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>ASW-0001 (Nivel 2): Vista Modular y Relaciones de los 11 EDU (Fig. 4, Fig. 5 y PDF Curso)</title>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&family=JetBrains+Mono:wght@500;600;700;800&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg: #f8fafc;
+    --ink: #0f172a;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body {
+    font-family: 'Inter', sans-serif;
+    background: var(--bg);
+    color: var(--ink);
+    overflow: hidden;
+    height: 100vh;
+    width: 100vw;
+    user-select: none;
+  }
+
+  /* BARRA SUPERIOR COMPACTA DE 1 LÍNEA */
+  .topbar {
+    position: fixed;
+    top: 0; left: 0; right: 0;
+    height: 46px;
+    background: #fff;
+    border-bottom: 2.5px solid #0f172a;
+    z-index: 200;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 0 14px;
+    white-space: nowrap;
+  }
+  .brand {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+  .badge-code {
+    background: #0f172a;
+    color: #fff;
+    font-family: 'JetBrains Mono', monospace;
+    font-weight: 800;
+    font-size: 11px;
+    padding: 4px 8px;
+  }
+  .title-main { font-size: 12px; font-weight: 900; text-transform: uppercase; }
+
+  .toolbar-right {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+  }
+  .btn-ui {
+    font-family: 'Inter', sans-serif;
+    font-size: 10.5px;
+    font-weight: 800;
+    padding: 0 10px;
+    height: 28px;
+    border: 2px solid #0f172a;
+    background: #fff;
+    cursor: pointer;
+    box-shadow: 2px 2px 0 #0f172a;
+    text-transform: uppercase;
+  }
+  .btn-ui.active { background: #0f172a; color: #fff; }
+  .zoom-tag {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 10.5px;
+    font-weight: 800;
+    padding: 0 10px;
+    height: 28px;
+    line-height: 24px;
+    border: 2px solid #0f172a;
+    background: #fef08a;
+  }
+
+  #viewport {
+    position: fixed;
+    top: 46px;
+    bottom: 0;
+    left: 0; right: 0;
+    overflow: hidden;
+    cursor: grab;
+    background-image: radial-gradient(#cbd5e1 1.2px, transparent 1.2px);
+    background-size: 24px 24px;
+  }
+  #viewport.panning { cursor: grabbing; }
+
+  #canvas {
+    position: absolute;
+    top: 0; left: 0;
+    transform-origin: 0 0;
+    width: 2420px;
+    padding: 36px 80px 80px 80px;
+  }
+
+  /* SVG OVERLAY DE RELACIONES */
+  #svg-links {
+    position: absolute;
+    top: 0; left: 0;
+    width: 100%; height: 100%;
+    pointer-events: none;
+    z-index: 30;
+    overflow: visible;
+  }
+  .edge-group { transition: opacity 0.15s; }
+  .edge-group.dimmed { opacity: 0.06 !important; }
+  .edge-line {
+    fill: none;
+    stroke: #0f172a;
+    stroke-width: 2.5px;
+  }
+  .edge-line.dashed {
+    stroke-dasharray: 7 5;
+    stroke: #334155;
+  }
+  .edge-line.acid {
+    stroke: #6d28d9;
+    stroke-width: 2.6px;
+  }
+  .edge-group.active-edge .edge-line {
+    stroke-width: 4.2px !important;
+    stroke-dasharray: none !important;
+  }
+  .edge-badge-bg {
+    fill: #ffffff;
+    stroke: #0f172a;
+    stroke-width: 1.8px;
+  }
+  .edge-group.active-edge .edge-badge-bg {
+    fill: #fef08a !important;
+    stroke-width: 2.5px !important;
+  }
+  .edge-badge-txt {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 10.5px;
+    font-weight: 800;
+    fill: #0f172a;
+  }
+
+  /* MEMBRETE SUPERIOR */
+  .doc-banner {
+    background: #fff;
+    border: 3px solid #0f172a;
+    box-shadow: 5px 5px 0 #0f172a;
+    padding: 14px 20px;
+    margin-bottom: 42px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    position: relative;
+    z-index: 20;
+  }
+  .doc-banner h2 { font-size: 17px; font-weight: 900; text-transform: uppercase; }
+  .doc-banner p { font-size: 11.5px; color: #475569; font-weight: 600; margin-top: 2px; }
+
+  /* FILA DE ACTORES EXTERNOS (CON CORREDOR AMPLIO DE 84px) */
+  .actors-row {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 64px;
+    margin-bottom: 84px;
+    position: relative;
+    z-index: 20;
+  }
+  .actor-box {
+    background: #ffffff;
+    border: 2.5px solid #0f172a;
+    box-shadow: 5px 5px 0 #0f172a;
+    padding: 16px 18px;
+    cursor: pointer;
+    transition: transform 0.15s, opacity 0.18s;
+  }
+  .actor-box:hover, .actor-box.selected-node {
+    background: #fefce8;
+    transform: translate(-2px, -2px);
+    box-shadow: 7px 7px 0 #1d4ed8;
+  }
+
+  /* CONTENEDOR DE FRONTERA DEL MONOLITO MODULAR */
+  .monolith-container {
+    border: 3.5px solid #0f172a;
+    background: rgba(241, 245, 249, 0.72);
+    box-shadow: 7px 7px 0 #0f172a;
+    padding: 32px 42px 38px 42px;
+    position: relative;
+    z-index: 15;
+  }
+  .monolith-header-strip {
+    background: #0f172a;
+    color: #fff;
+    padding: 10px 18px;
+    margin: -32px -42px 42px -42px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 12px;
+    font-weight: 800;
+  }
+
+  /* GRILLA ESPACIOSA CON CORREDORES AMPLIOS DE 92px ENTRE FILAS */
+  .mod-level {
+    display: grid;
+    gap: 68px;
+    margin-bottom: 92px;
+    position: relative;
+    z-index: 20;
+  }
+  .mod-level.lv-ui { grid-template-columns: 1.2fr 1fr 1.2fr; }
+  .mod-level.lv-supply { grid-template-columns: repeat(4, 1fr); }
+  .mod-level.lv-core { grid-template-columns: 1.1fr 1.3fr 1.1fr; }
+  .mod-level.lv-gov { grid-template-columns: repeat(3, 1fr); }
+  .mod-level.lv-db { grid-template-columns: repeat(3, 1fr); margin-bottom: 16px; }
+
+  /* NODO MODULAR EDU */
+  .mod-node {
+    background: #ffffff;
+    border: 2.5px solid #0f172a;
+    box-shadow: 5px 5px 0 #0f172a;
+    padding: 18px 20px;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    cursor: pointer;
+    transition: transform 0.15s, box-shadow 0.15s, opacity 0.18s;
+    position: relative;
+  }
+  .mod-node:hover, .mod-node.selected-node {
+    transform: translate(-2px, -2px);
+    box-shadow: 8px 8px 0 #1d4ed8;
+    background: #fefce8;
+  }
+  .mod-node.core-hub {
+    border-width: 3.5px;
+    background: #ecfdf5;
+    box-shadow: 7px 7px 0 #047857;
+  }
+  .mod-node.shared-srv {
+    background: #f5f3ff;
+    border-width: 3px;
+  }
+  .mod-node.neighbor-in {
+    border-color: #047857;
+    box-shadow: 7px 7px 0 #047857;
+  }
+  .mod-node.neighbor-out {
+    border-color: #7c3aed;
+    box-shadow: 7px 7px 0 #7c3aed;
+  }
+  .mod-node.dimmed, .actor-box.dimmed {
+    opacity: 0.14;
+    filter: grayscale(85%);
+  }
+
+  .node-top {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    border-bottom: 2px solid #0f172a;
+    padding-bottom: 5px;
+  }
+  .node-code {
+    background: #0f172a;
+    color: #fff;
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 11px;
+    font-weight: 800;
+    padding: 2px 8px;
+  }
+  .node-layer-tag {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 9.5px;
+    font-weight: 800;
+    padding: 2px 6px;
+    border: 1.5px solid #0f172a;
+    background: #fef08a;
+  }
+  .node-title {
+    font-size: 16px;
+    font-weight: 900;
+    line-height: 1.25;
+    color: #0f172a;
+  }
+  .node-short-sub {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 11.5px;
+    font-weight: 700;
+    color: #475569;
+  }
+
+  /* VISTA MEDIA (PÍLDORAS Y ROL) */
+  .node-mid {
+    display: flex;
+    flex-direction: column;
+    gap: 7px;
+  }
+  .node-role {
+    font-size: 11.5px;
+    font-weight: 600;
+    color: #334155;
+    line-height: 1.35;
+  }
+  .node-pills {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 4px;
+  }
+  .np {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 9.5px;
+    font-weight: 800;
+    padding: 2px 5px;
+    border: 1.5px solid #0f172a;
+  }
+  .np.cr { background: #dcfce7; color: #065f46; }
+  .np.rnf { background: #dbeafe; color: #1e40af; }
+  .np.mri { background: #fee2e2; color: #991b1b; }
+  .np.rev { background: #fef3c7; color: #92400e; border-style: dashed; }
+
+  /* VISTA MICRO (DETALLE PROFUNDO) */
+  .node-micro {
+    border-top: 1.5px dashed #64748b;
+    padding-top: 7px;
+    display: flex;
+    flex-direction: column;
+    gap: 5px;
+    font-size: 11px;
+  }
+  .nm-box {
+    background: #f8fafc;
+    border: 1.5px solid #cbd5e1;
+    padding: 6px 8px;
+    line-height: 1.35;
+  }
+  .nm-box.risk { background: #fef2f2; border-color: #dc2626; }
+  .nm-box.str { background: #f0fdf4; border-color: #16a34a; }
+
+  /* ===================================================================== */
+  /* REGLAS DE ZOOM SEMÁNTICO DE 3 NIVELES                                 */
+  /* ===================================================================== */
+  #canvas.lod-skeleton .node-mid,
+  #canvas.lod-skeleton .node-micro,
+  #canvas.lod-skeleton .node-layer-tag {
+    display: none !important;
+  }
+  #canvas.lod-skeleton .mod-node,
+  #canvas.lod-skeleton .actor-box {
+    text-align: center;
+    align-items: center;
+    justify-content: center;
+    padding: 22px 18px;
+    min-height: 112px;
+  }
+  #canvas.lod-skeleton .node-top {
+    border-bottom: none;
+    justify-content: center;
+    padding-bottom: 2px;
+  }
+  #canvas.lod-skeleton .node-code {
+    font-size: 12px;
+    padding: 3px 10px;
+  }
+  #canvas.lod-skeleton .node-title {
+    font-size: 19px;
+    font-weight: 900;
+  }
+  #canvas.lod-skeleton .node-short-sub {
+    font-size: 12.5px;
+  }
+
+  #canvas.lod-medium .node-micro {
+    display: none !important;
+  }
+
+  .monolith-footer-note {
+    margin-top: 14px;
+    background: #fff;
+    border: 2px solid #0f172a;
+    padding: 8px 14px;
+    font-size: 11.5px;
+    font-weight: 700;
+    text-align: center;
+  }
+
+  .sem-popover {
+    position: fixed;
+    top: 54px;
+    right: 16px;
+    width: 390px;
+    max-height: calc(100vh - 70px);
+    overflow-y: auto;
+    background: #fff;
+    border: 2.5px solid #0f172a;
+    box-shadow: 6px 6px 0 #0f172a;
+    padding: 13px 14px;
+    z-index: 300;
+    display: none;
+  }
+  .sem-popover.open { display: block; }
+  .sem-head {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    font-size: 12px;
+    font-weight: 900;
+    text-transform: uppercase;
+    margin-bottom: 4px;
+  }
+  .sem-sub {
+    font-size: 10.5px;
+    color: #475569;
+    font-weight: 600;
+    margin-bottom: 8px;
+    padding-bottom: 6px;
+    border-bottom: 1.5px solid #cbd5e1;
+  }
+  .sem-sec {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 9.5px;
+    font-weight: 800;
+    text-transform: uppercase;
+    color: #047857;
+    margin: 7px 0 4px 0;
+  }
+  .sem-item {
+    display: flex;
+    align-items: flex-start;
+    gap: 9px;
+    padding: 6px 8px;
+    border: 1.5px solid transparent;
+    border-radius: 5px;
+    cursor: pointer;
+    font-size: 11px;
+    line-height: 1.32;
+    transition: all 0.12s;
+  }
+  .sem-item:hover { background: #f1f5f9; border-color: #cbd5e1; }
+  .sem-item.active-sem {
+    background: #fefce8;
+    border-color: #0f172a;
+    box-shadow: 2px 2px 0 #0f172a;
+  }
+  .sem-box { width: 16px; height: 16px; flex-shrink: 0; margin-top: 2px; }
+  .sem-line { width: 22px; height: 16px; flex-shrink: 0; display: flex; align-items: center; margin-top: 2px; }
+</style>
+</head>
+<body>
+
+<header class="topbar">
+  <div class="brand">
+    <span class="badge-code">ASW-0001 · N2</span>
+    <span class="title-main">Vista Modular Conectada de los 11 EDU (Figura 4 + Figura 5 + PDF Curso)</span>
+  </div>
+  <div class="toolbar-right">
+    <span style="font-size:10px;font-weight:800;color:#475569;">FLECHAS:</span>
+    <select id="edgeModeSelect" style="font-size:11px;font-weight:700;height:28px;border:2px solid #0f172a;padding:0 6px;" onchange="renderEdges()">
+      <option value="CLEAN" selected>Corredores Limpios (Sin cruces)</option>
+      <option value="ALL">Todas las 22 relaciones</option>
+      <option value="HOVER">Solo al pasar el mouse / clic</option>
+    </select>
+    <button class="btn-ui active" id="btnSkeleton" onclick="setZoomMode('skeleton')">1. Lejos (Esqueleto)</button>
+    <button class="btn-ui" id="btnMedium" onclick="setZoomMode('medium')">2. Medio (Píldoras CR)</button>
+    <button class="btn-ui" id="btnMicro" onclick="setZoomMode('micro')">3. Cerca (Detalle Total)</button>
+    <button class="btn-ui" onclick="toggleSemPopover()">Semántica Relacional</button>
+    <button class="btn-ui" onclick="clearFocus()">Limpiar</button>
+    <div id="zoomLabel" class="zoom-tag">54% · ESQUELETO</div>
+  </div>
+</header>
+
+<aside class="sem-popover" id="semPopover">
+  <div class="sem-head">
+    <span>Semántica Relacional y Modular</span>
+    <div style="display:flex;gap:6px;">
+      <button onclick="applySemanticFilter('ALL')" style="background:#0f172a;color:#fff;border:none;padding:2px 7px;font-size:10px;font-weight:800;cursor:pointer;">Ver Todo</button>
+      <button onclick="toggleSemPopover()" style="background:none;border:none;font-size:13px;font-weight:900;cursor:pointer;">✕</button>
+    </div>
+  </div>
+  <div class="sem-sub">Haz clic en cualquier elemento para resaltar sus módulos y relaciones funcionales.</div>
+
+  <div class="sem-sec">1. Relaciones Funcionales y Flujos</div>
+  <div class="sem-item" data-sem="REL_INTRA" onclick="applySemanticFilter('REL_INTRA')">
+    <span class="sem-line"><svg width="22" height="12"><line x1="0" y1="6" x2="18" y2="6" stroke="#0f172a" stroke-width="3"/><polygon points="15,2 22,6 15,10" fill="#0f172a"/></svg></span>
+    <div><b>Relación Funcional Directa (EDU ↔ EDU):</b> Provisión de productos, medicamentos, incremento/descuento de stock por lote FEFO y arqueo por turno.</div>
+  </div>
+  <div class="sem-item" data-sem="REL_INTER" onclick="applySemanticFilter('REL_INTER')">
+    <span class="sem-line"><svg width="22" height="12"><line x1="0" y1="6" x2="18" y2="6" stroke="#334155" stroke-width="2.5" stroke-dasharray="4 3"/><polygon points="15,2 22,6 15,10" fill="#334155"/></svg></span>
+    <div><b>Control de Permisos y Supervisión Normativa:</b> Validación RBAC (EDU-0006) y controles hacia Reportes (EDU-0010) y POE (EDU-0012).</div>
+  </div>
+  <div class="sem-item" data-sem="REL_DATA" onclick="applySemanticFilter('REL_DATA')">
+    <span class="sem-line"><svg width="22" height="12"><line x1="0" y1="6" x2="18" y2="6" stroke="#6d28d9" stroke-width="3"/><polygon points="15,2 22,6 15,10" fill="#6d28d9"/></svg></span>
+    <div><b>Persistencia Transaccional ACID y Respaldo:</b> Coordinación atómica hacia marifarma_gestion_db (BDD_0001) y copia diaria 24h.</div>
+  </div>
+
+  <div class="sem-sec">2. Agrupaciones Funcionales y Estado</div>
+  <div class="sem-item" data-sem="DOM_UI" onclick="applySemanticFilter('DOM_UI')">
+    <span class="sem-box" style="background:#dbeafe;border:2px solid #1d4ed8;"></span>
+    <div><b>Actores y Frontera de Interacción:</b> Cajeros Local 1 y Local 2, Administrador, Proveedor externo e Interfaz Web SPA.</div>
+  </div>
+  <div class="sem-item" data-sem="DOM_SEC" onclick="applySemanticFilter('DOM_SEC')">
+    <span class="sem-box" style="background:#fef3c7;border:2px solid #b45309;"></span>
+    <div><b>Accesos y Planificación de Personal:</b> Usuarios y roles RBAC (EDU-0006) y gestión de turnos (EDU-0013).</div>
+  </div>
+  <div class="sem-item" data-sem="DOM_CORE" onclick="applySemanticFilter('DOM_CORE')">
+    <span class="sem-box" style="background:#d1fae5;border:2px solid #047857;"></span>
+    <div><b>Núcleo Operativo (Catálogo, Compras, Inventario, Ventas, Caja):</b> Módulos centrales que ejecutan el ciclo comercial y de stock FEFO.</div>
+  </div>
+  <div class="sem-item" data-sem="DOM_DATA" onclick="applySemanticFilter('DOM_DATA')">
+    <span class="sem-box" style="background:#ede9fe;border:2px solid #6d28d9;"></span>
+    <div><b>Servicios Transaccionales y Base de Datos Central:</b> Coordinador ACID, PostgreSQL 16 (BDD_0001) y bitácora de auditoría.</div>
+  </div>
+  <div class="sem-item" data-sem="DOM_HW" onclick="applySemanticFilter('DOM_HW')">
+    <span class="sem-box" style="background:#e2e8f0;border:2px solid #334155;"></span>
+    <div><b>Continuidad Operativa e Infraestructura Confirmada:</b> Respaldo 24h (RNF-0002) y equipos Lenovo ThinkCentre i3 + UPS.</div>
+  </div>
+  <div class="sem-item" data-sem="STATE_RISK" onclick="applySemanticFilter('STATE_RISK')">
+    <span class="sem-box" style="background:#fee2e2;border:2px solid #dc2626;"></span>
+    <div><b>Puntos con Riesgo Crítico (Matrices MRI):</b> Módulos con exposición a corte WAN, concurrencia de lotes o falla eléctrica.</div>
+  </div>
+  <div class="sem-item" data-sem="STATE_REV" onclick="applySemanticFilter('STATE_REV')">
+    <span class="sem-box" style="background:#fef08a;border:2px dashed #d97706;"></span>
+    <div><b>Decisiones Bajo Revisión (R1 a R6):</b> Módulos con parámetros abiertos en validación final con el cliente.</div>
+  </div>
+</aside>
+
+<div id="viewport">
+  <div id="canvas" class="lod-skeleton">
+
+    <svg id="svg-links">
+      <defs>
+        <marker id="arr-solid" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="6.5" markerHeight="6.5" orient="auto-start-reverse">
+          <path d="M 0 1 L 10 5 L 0 9 z" fill="#0f172a"/>
+        </marker>
+        <marker id="arr-dashed" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="6.5" markerHeight="6.5" orient="auto-start-reverse">
+          <path d="M 0 1 L 10 5 L 0 9 z" fill="#334155"/>
+        </marker>
+        <marker id="arr-acid" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="6.5" markerHeight="6.5" orient="auto-start-reverse">
+          <path d="M 0 1 L 10 5 L 0 9 z" fill="#6d28d9"/>
+        </marker>
+        <marker id="arr-highlight" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="7.5" markerHeight="7.5" orient="auto-start-reverse">
+          <path d="M 0 1 L 10 5 L 0 9 z" fill="#dc2626"/>
+        </marker>
+      </defs>
+      <g id="edges-container"></g>
+    </svg>
+
+    <div class="doc-banner">
+      <div>
+        <h2>ARQUITECTURA LÓGICA MODULAR CONECTADA (FIGURA 4 + FIGURA 5 + 11 MÓDULOS EDU)</h2>
+        <p>De lejos se observa el esqueleto limpio sin sobrecarga visual; al acercar con la rueda del mouse o hacer clic en un módulo se despliegan sus requisitos y relaciones.</p>
+      </div>
+      <div style="font-family:'JetBrains Mono',monospace; font-size:11px; font-weight:800; text-align:right;">
+        <div>11 MÓDULOS EDU + SERVICIOS ACID + BD CENTRAL</div>
+        <div style="color:#047857;">HAZ CLIC EN CUALQUIER CAJA PARA VER TODAS SUS FLECHAS</div>
+      </div>
+    </div>
+
+    <!-- ================================================================= -->
+    <!-- FILA SUPERIOR: 4 ACTORES EXTERNOS (FIGURA 4 DEL CURSO)            -->
+    <!-- ================================================================= -->
+    <div class="actors-row">
+      <div class="actor-box" id="ACT-CAJ1">
+        <div class="node-top">
+          <span class="node-code">ACTOR 1 · LAN</span>
+          <span class="node-layer-tag">Local 1</span>
+        </div>
+        <div class="node-title">Cajero Local 1</div>
+        <div class="node-short-sub">[Atención Local en Mostrador]</div>
+        <div class="node-mid">
+          <div class="node-role">Opera el navegador en la PC anfitriona del Local 1 para ventas rápidas y arqueo.</div>
+        </div>
+      </div>
+
+      <div class="actor-box" id="ACT-CAJ2">
+        <div class="node-top">
+          <span class="node-code">ACTOR 2 · VPN</span>
+          <span class="node-layer-tag">Local 2</span>
+        </div>
+        <div class="node-title">Cajero Local 2</div>
+        <div class="node-short-sub">[Atención Remota por VPN]</div>
+        <div class="node-mid">
+          <div class="node-role">Opera el navegador en la PC del Local 2 conectado por túnel WireGuard VPN.</div>
+        </div>
+      </div>
+
+      <div class="actor-box" id="ACT-ADMIN">
+        <div class="node-top">
+          <span class="node-code">ACTOR 3 · GESTIÓN</span>
+          <span class="node-layer-tag">Admin / Q.F.</span>
+        </div>
+        <div class="node-title">Administrador / Q.F.</div>
+        <div class="node-short-sub">[Gestión y Control Sanitario]</div>
+        <div class="node-mid">
+          <div class="node-role">Administra catálogo, compras, turnos, reportes y cumplimiento POE DIGEMID.</div>
+        </div>
+      </div>
+
+      <div class="actor-box" id="ACT-PROV">
+        <div class="node-top">
+          <span class="node-code">ACTOR EXTERNO</span>
+          <span class="node-layer-tag">Droguería</span>
+        </div>
+        <div class="node-title">Proveedor Externo</div>
+        <div class="node-short-sub">[Entrega y Comprobante]</div>
+        <div class="node-mid">
+          <div class="node-role">Entrega mercadería física con lote y fecha de vencimiento para recepción confirmada.</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ================================================================= -->
+    <!-- CONTENEDOR PRINCIPAL: INNOFARMA · MONOLITO MODULAR (FIGURA 4)     -->
+    <!-- ================================================================= -->
+    <div class="monolith-container">
+      <div class="monolith-header-strip">
+        <span>FRONTERA DEL SISTEMA: INNOFARMA · MONOLITO MODULAR (APLICACIÓN WEB LOCAL CENTRALIZADA EN LOCAL 1)</span>
+        <span>11 EDU DEL CATÁLOGO DE REQUISITOS + SERVICIOS TRANSACCIONALES + POSTGRESQL</span>
+      </div>
+
+      <!-- NIVEL 1 INTERNO: INTERFAZ WEB + ACCESOS (EDU-0006) + TURNOS (EDU-0013) -->
+      <div class="mod-level lv-ui">
+        <article class="mod-node" id="MOD-UI">
+          <div class="node-top">
+            <span class="node-code">CAPA 1 · INTERFAZ WEB</span>
+            <span class="node-layer-tag">EQ1: AUT-0001 / 0007</span>
+          </div>
+          <div class="node-title">Interfaz Web y Cola Offline</div>
+          <div class="node-short-sub">[Pantallas, Formularios y Mensajes]</div>
+          <div class="node-mid">
+            <div class="node-role">Punto de interacción para Local 1 (LAN) y Local 2 (VPN) con cola contingente IndexedDB.</div>
+            <div class="node-pills">
+              <span class="np rnf">RNF-0001 / RNF-0003 / RNF-0004</span>
+              <span class="np mri">MRI-0005 / MRI-0010</span>
+              <span class="np rev">REVISIÓN R1</span>
+            </div>
+          </div>
+          <div class="node-micro">
+            <div class="nm-box str"><b>Fortaleza:</b> Unifica la atención de ambas sedes en navegador ligero sobre 8 GB RAM.</div>
+          </div>
+        </article>
+
+        <article class="mod-node" id="EDU-0006">
+          <div class="node-top">
+            <span class="node-code">EDU-0006 · ACCESOS</span>
+            <span class="node-layer-tag">EQ4: AUT-0002 / 0006</span>
+          </div>
+          <div class="node-title">Usuarios, Roles y Accesos</div>
+          <div class="node-short-sub">[Autenticación y Matriz RBAC]</div>
+          <div class="node-mid">
+            <div class="node-role">Autentica sesiones JWT, bloquea tras 5 intentos fallidos y controla permisos por rol.</div>
+            <div class="node-pills">
+              <span class="np cr">EDU-0006 · ILA-0001 · ESP-0007</span>
+              <span class="np rnf">RNF-0005 / RNF-0006</span>
+              <span class="np mri">MRI-0014 / MRI-0015</span>
+            </div>
+          </div>
+          <div class="node-micro">
+            <div class="nm-box str"><b>Relación Curso:</b> <code>EDU-0006 ──controla permisos──► EDU-0004 (Ventas)</code>.</div>
+          </div>
+        </article>
+
+        <article class="mod-node" id="EDU-0013">
+          <div class="node-top">
+            <span class="node-code">EDU-0013 · TURNOS</span>
+            <span class="node-layer-tag">EQ2: AUT-0005 / 0004</span>
+          </div>
+          <div class="node-title">Gestión de Turnos</div>
+          <div class="node-short-sub">[Horarios de Personal y Cajeros]</div>
+          <div class="node-mid">
+            <div class="node-role">Planifica horarios de trabajo sin solapamiento por sucursal y habilita apertura de caja.</div>
+            <div class="node-pills">
+              <span class="np cr">EDU-0013 · ILA-0008 · ESP-0010</span>
+              <span class="np rnf">RNF-0005 / RNF-0008</span>
+            </div>
+          </div>
+          <div class="node-micro">
+            <div class="nm-box str"><b>Relación Curso:</b> <code>EDU-0013 ──planifica turnos──► EDU-0011 (Caja)</code>.</div>
+          </div>
+        </article>
+      </div>
+
+      <!-- NIVEL 2 INTERNO: CATÁLOGO (EDU-0008, EDU-0005) Y ABASTECIMIENTO (EDU-0007, EDU-0009) -->
+      <div class="mod-level lv-supply">
+        <article class="mod-node" id="EDU-0008">
+          <div class="node-top">
+            <span class="node-code">EDU-0008 · MEDICAMENTOS</span>
+            <span class="node-layer-tag">EQ2: AUT-0005 / 0004</span>
+          </div>
+          <div class="node-title">Catálogo de Medicamentos</div>
+          <div class="node-short-sub">[Principio Activo, Concentración y Receta]</div>
+          <div class="node-mid">
+            <div class="node-role">Gestiona ficha sanitaria DIGEMID, forma farmacéutica y condición de venta.</div>
+            <div class="node-pills">
+              <span class="np cr">EDU-0008 · ILA-0009 · ESP-0009</span>
+              <span class="np rnf">RNF-0003 / RNF-0008</span>
+              <span class="np rev">REVISIÓN R5</span>
+            </div>
+          </div>
+          <div class="node-micro">
+            <div class="nm-box str"><b>Relaciones Curso:</b> <code>──proporciona medicamentos──► EDU-0002</code> y <code>──datos sanitarios──► EDU-0012</code>.</div>
+          </div>
+        </article>
+
+        <article class="mod-node" id="EDU-0005">
+          <div class="node-top">
+            <span class="node-code">EDU-0005 · PRODUCTOS</span>
+            <span class="node-layer-tag">EQ2: AUT-0005 / 0004</span>
+          </div>
+          <div class="node-title">Productos y Presentaciones</div>
+          <div class="node-short-sub">[Caja / Blíster / Unidad · Factor Conversión]</div>
+          <div class="node-mid">
+            <div class="node-role">Define SKU, precios y factor de conversión de cada presentación hacia unidad base.</div>
+            <div class="node-pills">
+              <span class="np cr">EDU-0005 · ILA-0004 · ESP-0004</span>
+              <span class="np rnf">RNF-0003 / RNF-0008</span>
+              <span class="np mri">MRI-0001</span>
+            </div>
+          </div>
+          <div class="node-micro">
+            <div class="nm-box str"><b>Relaciones Curso + Fig. 5:</b> <code>──proporciona productos──► EDU-0002</code>, <code>──datos productos──► EDU-0007</code> y <code>──convierte a unidad base──► EDU-0004</code>.</div>
+          </div>
+        </article>
+
+        <article class="mod-node" id="EDU-0007">
+          <div class="node-top">
+            <span class="node-code">EDU-0007 · COMPRAS</span>
+            <span class="node-layer-tag">EQ2: AUT-0005 / 0004</span>
+          </div>
+          <div class="node-title">Compras y Recepción</div>
+          <div class="node-short-sub">[Cantidad Real, Lote y Vencimiento]</div>
+          <div class="node-mid">
+            <div class="node-role">Registra órdenes de compra y confirma recepción física ingresando lote y vencimiento.</div>
+            <div class="node-pills">
+              <span class="np cr">EDU-0007 · ILA-0005 · ESP-0003</span>
+              <span class="np rnf">RNF-0005 / RNF-0008</span>
+            </div>
+          </div>
+          <div class="node-micro">
+            <div class="nm-box str"><b>Relación Curso:</b> <code>EDU-0007 ──incrementa stock por lote──► EDU-0002 (Inventario)</code>.</div>
+          </div>
+        </article>
+
+        <article class="mod-node" id="EDU-0009">
+          <div class="node-top">
+            <span class="node-code">EDU-0009 · PROVEEDORES</span>
+            <span class="node-layer-tag">EQ2: AUT-0005 / 0004</span>
+          </div>
+          <div class="node-title">Gestión de Proveedores</div>
+          <div class="node-short-sub">[RUC y Calificación Sanitaria]</div>
+          <div class="node-mid">
+            <div class="node-role">Identifica y habilita distribuidores autorizados para respaldar cada compra.</div>
+            <div class="node-pills">
+              <span class="np cr">EDU-0009 · ILA-0006 · ESP-0005</span>
+              <span class="np rnf">RNF-0005 / RNF-0008</span>
+            </div>
+          </div>
+          <div class="node-micro">
+            <div class="nm-box str"><b>Relaciones Curso:</b> <code>──proporciona proveedor──► EDU-0007</code> y <code>──proveedores calificados──► EDU-0012</code>.</div>
+          </div>
+        </article>
+      </div>
+
+      <!-- NIVEL 3 INTERNO: OPERACIÓN CORE (EDU-0004 VENTAS <-> EDU-0002 INVENTARIO <-> EDU-0011 CAJA) -->
+      <div class="mod-level lv-core">
+        <article class="mod-node core-hub" id="EDU-0004">
+          <div class="node-top">
+            <span class="node-code">EDU-0004 · VENTAS (DES-0001)</span>
+            <span class="node-layer-tag">EQ2: AUT-0005 / 0004</span>
+          </div>
+          <div class="node-title">Gestión de Ventas POS</div>
+          <div class="node-short-sub">[Valida Lote y Descuenta Equivalente]</div>
+          <div class="node-mid">
+            <div class="node-role">Convierte presentación a unidad base, valida lote FEFO vigente y registra cobro o anulación.</div>
+            <div class="node-pills">
+              <span class="np cr">EDU-0004 · ILA-0002 · DES-0001</span>
+              <span class="np rnf">RNF-0001 / RNF-0003 / RNF-0008</span>
+              <span class="np mri">MRI-0002 / MRI-0008</span>
+              <span class="np rev">REVISIÓN R4</span>
+            </div>
+          </div>
+          <div class="node-micro">
+            <div class="nm-box str"><b>Relaciones Curso:</b> <code>──descuenta stock──► EDU-0002</code>, <code>──registra ventas por turno──► EDU-0011</code> y <code>──datos ventas──► EDU-0010</code>.</div>
+          </div>
+        </article>
+
+        <article class="mod-node core-hub" id="EDU-0002">
+          <div class="node-top">
+            <span class="node-code">EDU-0002 · INVENTARIO (NÚCLEO)</span>
+            <span class="node-layer-tag">EQ2: AUT-0005 / 0004</span>
+          </div>
+          <div class="node-title">Inventario por Lotes (FEFO)</div>
+          <div class="node-short-sub">[Stock en Unidad Base y Vencimientos]</div>
+          <div class="node-mid">
+            <div class="node-role">Núcleo central: controla stock en unidad base por lote, aplica FEFO y bloquea vencidos (DES-0002).</div>
+            <div class="node-pills">
+              <span class="np cr">EDU-0002 · ILA-0020 · DES-0002</span>
+              <span class="np rnf">RNF-0007 / RNF-0008</span>
+              <span class="np mri">MRI-0006 / MRI-0008</span>
+            </div>
+          </div>
+          <div class="node-micro">
+            <div class="nm-box str"><b>Núcleo Central:</b> Recibe de <code>EDU-0008, EDU-0005, EDU-0007, EDU-0004</code> y alimenta a <code>EDU-0010</code> y <code>EDU-0012</code>.</div>
+          </div>
+        </article>
+
+        <article class="mod-node core-hub" id="EDU-0011">
+          <div class="node-top">
+            <span class="node-code">EDU-0011 · CAJA</span>
+            <span class="node-layer-tag">EQ2: AUT-0005 / 0004</span>
+          </div>
+          <div class="node-title">Control y Arqueo de Caja</div>
+          <div class="node-short-sub">[Apertura, Movimientos y Cierre]</div>
+          <div class="node-mid">
+            <div class="node-role">Abre sesión según turno, acumula ventas por método de pago y calcula cuadre al cierre.</div>
+            <div class="node-pills">
+              <span class="np cr">EDU-0011 · ILA-0007 · ESP-0008</span>
+              <span class="np rnf">RNF-0005 / RNF-0008</span>
+            </div>
+          </div>
+          <div class="node-micro">
+            <div class="nm-box str"><b>Relaciones Curso:</b> Recibe <code>ventas por turno</code> de <code>EDU-0004</code> y <code>planificación de turnos</code> de <code>EDU-0013</code>.</div>
+          </div>
+        </article>
+      </div>
+
+      <!-- NIVEL 4 INTERNO: SERVICIOS COMPARTIDOS ACID + REPORTES (EDU-0010) + POE (EDU-0012) -->
+      <div class="mod-level lv-gov">
+        <article class="mod-node shared-srv" id="MOD-ACID">
+          <div class="node-top">
+            <span class="node-code">CAPA 3/4 · SERVICIOS COMPARTIDOS</span>
+            <span class="node-layer-tag">EQ3 + EQ4</span>
+          </div>
+          <div class="node-title">Servicios Compartidos ACID</div>
+          <div class="node-short-sub">[Transacciones, Reglas y Auditoría]</div>
+          <div class="node-mid">
+            <div class="node-role">Coordina atómicamente las operaciones entre Ventas, Compras, Caja e Inventario (Figura 4).</div>
+            <div class="node-pills">
+              <span class="np rnf">RNF-0008 (ACID) / RNF-0005</span>
+              <span class="np mri">MRI-0008 / MRI-0014</span>
+            </div>
+          </div>
+          <div class="node-micro">
+            <div class="nm-box str"><b>Figura 4 Curso:</b> Garantiza consistencia total antes de confirmar en PostgreSQL.</div>
+          </div>
+        </article>
+
+        <article class="mod-node" id="EDU-0010">
+          <div class="node-top">
+            <span class="node-code">EDU-0010 · REPORTES</span>
+            <span class="node-layer-tag">EQ2: AUT-0005 / 0004</span>
+          </div>
+          <div class="node-title">Reportes e Indicadores</div>
+          <div class="node-short-sub">[Existencias, Ventas y Compras]</div>
+          <div class="node-mid">
+            <div class="node-role">Consolida consultas gerenciales de stock crítico, próximos a vencer, ventas y compras.</div>
+            <div class="node-pills">
+              <span class="np cr">EDU-0010 · ILA-0003 · ILA-0022</span>
+              <span class="np rnf">RNF-0007</span>
+            </div>
+          </div>
+          <div class="node-micro">
+            <div class="nm-box str"><b>Relaciones Curso:</b> Recibe <code>existencias (EDU-0002)</code>, <code>ventas (EDU-0004)</code> y <code>compras (EDU-0007)</code>.</div>
+          </div>
+        </article>
+
+        <article class="mod-node" id="EDU-0012">
+          <div class="node-top">
+            <span class="node-code">EDU-0012 · CUMPLIMIENTO POE</span>
+            <span class="node-layer-tag">EQ2: AUT-0005 / 0004</span>
+          </div>
+          <div class="node-title">Cumplimiento de POE</div>
+          <div class="node-short-sub">[Control Normativo Sanitario BPA]</div>
+          <div class="node-mid">
+            <div class="node-role">Documenta controles sanitarios de inventario, compras, proveedores y medicamentos.</div>
+            <div class="node-pills">
+              <span class="np cr">EDU-0012 · ILA-0021 · ESP-0011</span>
+              <span class="np rnf">RNF-0005 / RNF-0008</span>
+              <span class="np rev">REVISIÓN R6</span>
+            </div>
+          </div>
+          <div class="node-micro">
+            <div class="nm-box str"><b>Relaciones Curso:</b> Recibe controles de <code>EDU-0002, EDU-0007, EDU-0009 y EDU-0008</code>.</div>
+          </div>
+        </article>
+      </div>
+
+      <!-- NIVEL 5 INTERNO: PERSISTENCIA Y RESPALDO (CAPAS 4 Y 5 - FIGURA 4) -->
+      <div class="mod-level lv-db">
+        <article class="mod-node shared-srv" id="MOD-DB">
+          <div class="node-top">
+            <span class="node-code">CAPA 4 · BDD_0001</span>
+            <span class="node-layer-tag">EQ3: AUT-0003 / 0008</span>
+          </div>
+          <div class="node-title">BD Central marifarma_gestion_db</div>
+          <div class="node-short-sub">[PostgreSQL 16 + bitacora_auditoria]</div>
+          <div class="node-mid">
+            <div class="node-role">Almacena las tablas relacionales 3FN y la auditoría inmutable en el SSD del Local 1.</div>
+            <div class="node-pills">
+              <span class="np cr">BDD_0001</span>
+              <span class="np rnf">RNF-0005 / RNF-0008</span>
+            </div>
+          </div>
+        </article>
+
+        <article class="mod-node" id="MOD-BAK">
+          <div class="node-top">
+            <span class="node-code">CAPA 5 · RESPALDO 24H</span>
+            <span class="node-layer-tag">EQ3: AUT-0003 / 0008</span>
+          </div>
+          <div class="node-title">Respaldo y Recuperación</div>
+          <div class="node-short-sub">[Copia Programada 24h · RNF-0002]</div>
+          <div class="node-mid">
+            <div class="node-role">Genera backup automático cifrado en disco local y medio externo con restauración ≤ 10 min.</div>
+            <div class="node-pills">
+              <span class="np rnf">RNF-0002</span>
+              <span class="np rev">REVISIÓN R3</span>
+            </div>
+          </div>
+        </article>
+
+        <article class="mod-node" id="MOD-HW">
+          <div class="node-top">
+            <span class="node-code">CAPA 5 · HARDWARE CONFIRMADO</span>
+            <span class="node-layer-tag">EQ3: AUT-0003 / 0008</span>
+          </div>
+          <div class="node-title">2x PC ThinkCentre i3 + UPS</div>
+          <div class="node-short-sub">[Local 1 Servidor + Local 2 Cliente VPN]</div>
+          <div class="node-mid">
+            <div class="node-role">2x Lenovo ThinkCentre Neo 50s Gen 3 (Core i3-12100, 8 GB RAM, 256 GB NVMe SSD) + UPS 1000VA.</div>
+            <div class="node-pills">
+              <span class="np rnf">RNF-0001 / RNF-0004</span>
+              <span class="np mri">MRI-0003 / MRI-0004</span>
+            </div>
+          </div>
+        </article>
+      </div>
+
+      <div class="monolith-footer-note">
+        NOTA ARQUITECTÓNICA (FIGURA 4 DEL CURSO): Los 11 módulos EDU son responsabilidades lógicas dentro de una sola aplicación (Monolito Modular); no representan microservicios ni servidores independientes.
+      </div>
+    </div>
+
+  </div>
+</div>
+
+<script>
+  const viewport = document.getElementById('viewport');
+  const canvas = document.getElementById('canvas');
+  const edgesContainer = document.getElementById('edges-container');
+  const zoomLabel = document.getElementById('zoomLabel');
+  const btnSkeleton = document.getElementById('btnSkeleton');
+  const btnMedium = document.getElementById('btnMedium');
+  const btnMicro = document.getElementById('btnMicro');
+
+  let scale = 0.54;
+  let panX = 42;
+  let panY = 12;
+  let isPanning = false;
+  let sx = 0, sy = 0;
+  let selectedId = null;
+  let hoveredId = null;
+  let activeSemanticCat = 'ALL';
+
+  function toggleSemPopover() {
+    document.getElementById('semPopover').classList.toggle('open');
+  }
+
+  const SEMANTIC_RULES_N2 = {
+    REL_INTRA: {
+      nodes: ['EDU-0008', 'EDU-0005', 'EDU-0007', 'EDU-0009', 'EDU-0004', 'EDU-0002', 'EDU-0011', 'EDU-0013'],
+      styles: ['solid']
+    },
+    REL_INTER: {
+      nodes: ['MOD-UI', 'EDU-0006', 'EDU-0013', 'EDU-0005', 'EDU-0009', 'EDU-0007', 'EDU-0010', 'EDU-0012'],
+      styles: ['dashed']
+    },
+    REL_DATA: {
+      nodes: ['EDU-0004', 'EDU-0002', 'MOD-ACID', 'MOD-DB', 'MOD-BAK', 'MOD-HW'],
+      styles: ['acid']
+    },
+    DOM_UI: {
+      nodes: ['ACT-CAJ1', 'ACT-CAJ2', 'ACT-ADMIN', 'ACT-PROV', 'MOD-UI', 'EDU-0006']
+    },
+    DOM_SEC: {
+      nodes: ['EDU-0006', 'EDU-0013', 'MOD-UI', 'EDU-0004', 'EDU-0011']
+    },
+    DOM_CORE: {
+      nodes: ['EDU-0008', 'EDU-0005', 'EDU-0007', 'EDU-0009', 'EDU-0004', 'EDU-0002', 'EDU-0011']
+    },
+    DOM_DATA: {
+      nodes: ['MOD-ACID', 'MOD-DB', 'EDU-0004', 'EDU-0002', 'MOD-BAK']
+    },
+    DOM_HW: {
+      nodes: ['MOD-DB', 'MOD-BAK', 'MOD-HW']
+    },
+    STATE_RISK: {
+      nodes: ['MOD-UI', 'EDU-0005', 'EDU-0004', 'EDU-0002', 'MOD-ACID', 'MOD-HW']
+    },
+    STATE_REV: {
+      nodes: ['MOD-UI', 'EDU-0008', 'EDU-0004', 'EDU-0012', 'MOD-BAK']
+    }
+  };
+
+  function applySemanticFilter(cat) {
+    if (activeSemanticCat === cat && cat !== 'ALL') cat = 'ALL';
+    activeSemanticCat = cat;
+    selectedId = null;
+    hoveredId = null;
+    document.querySelectorAll('.sem-item').forEach(el => {
+      el.classList.toggle('active-sem', el.dataset.sem === cat);
+    });
+    applyFocusState();
+  }
+  window.applySemanticFilter = applySemanticFilter;
+
+  window.addEventListener('message', (e) => {
+    if (e.data && e.data.type === 'SEMANTIC_FILTER') {
+      activeSemanticCat = '';
+      applySemanticFilter(e.data.category || 'ALL');
+    }
+  });
+
+  const TH_MED = 0.68;
+  const TH_MIC = 0.90;
+
+  // RELACIONES CON RUTAS ESCALONADAS POR CORREDORES (clean: true = vecinos directos sin cruzar otras cajas)
+  const EDGES = [
+    // Actores -> Nivel 1 (Corredor Superior)
+    { from: 'ACT-CAJ1',  to: 'MOD-UI',   label: 'Atención LAN',       style: 'solid',  fSide: 'bottom', tSide: 'top', clean: true,  yRatio: 0.38 },
+    { from: 'ACT-CAJ2',  to: 'MOD-UI',   label: 'Atención VPN',       style: 'solid',  fSide: 'bottom', tSide: 'top', clean: true,  yRatio: 0.62 },
+    { from: 'ACT-ADMIN', to: 'EDU-0006', label: 'Gestión Admin',      style: 'solid',  fSide: 'bottom', tSide: 'top', clean: true,  yRatio: 0.50 },
+    { from: 'ACT-PROV',  to: 'EDU-0009', label: 'Entrega y factura',  style: 'solid',  fSide: 'bottom', tSide: 'top', clean: false, yRatio: 0.30 },
+
+    // Nivel 1: Interfaz Web, Accesos y Turnos
+    { from: 'MOD-UI',    to: 'EDU-0006', label: 'Autentica rol',      style: 'dashed', fSide: 'right',  tSide: 'left', clean: true },
+    { from: 'EDU-0006',  to: 'EDU-0005', label: '7. Controla permisos', style: 'dashed', fSide: 'bottom', tSide: 'top', clean: true, yRatio: 0.45 },
+    { from: 'EDU-0013',  to: 'EDU-0009', label: 'Habilita personal',  style: 'dashed', fSide: 'bottom', tSide: 'top', clean: true,  yRatio: 0.45 },
+
+    // Nivel 2: Catálogo y Abastecimiento (Las relaciones del PDF 11-EDU + Figura 5)
+    { from: 'EDU-0008', to: 'EDU-0005', label: 'Datos medicamento',   style: 'solid',  fSide: 'right',  tSide: 'left', clean: true },
+    { from: 'EDU-0005', to: 'EDU-0007', label: '3. Datos productos',  style: 'solid',  fSide: 'right',  tSide: 'left', clean: true },
+    { from: 'EDU-0009', to: 'EDU-0007', label: '4. Proveedor activo', style: 'solid',  fSide: 'left',   tSide: 'right',clean: true },
+
+    // Corredor Nivel 2 -> Nivel 3 (Hacia Ventas, Inventario y Caja)
+    { from: 'EDU-0008', to: 'EDU-0002', label: '1. Proporciona med.', style: 'solid',  fSide: 'bottom', tSide: 'top', clean: false, yRatio: 0.32 },
+    { from: 'EDU-0005', to: 'EDU-0004', label: 'Convierte unidad base',style: 'solid', fSide: 'bottom', tSide: 'top', clean: true,  yRatio: 0.45 },
+    { from: 'EDU-0005', to: 'EDU-0002', label: '2. Proporciona prod.',style: 'solid',  fSide: 'bottom', tSide: 'top', clean: true,  yRatio: 0.35 },
+    { from: 'EDU-0007', to: 'EDU-0002', label: '5. Incrementa stock', style: 'solid',  fSide: 'bottom', tSide: 'top', clean: true,  yRatio: 0.65 },
+    { from: 'EDU-0013', to: 'EDU-0011', label: '9. Planifica turnos', style: 'solid',  fSide: 'bottom', tSide: 'top', clean: false, yRatio: 0.50 },
+
+    // Corredores Horizontales Nivel 3 (Ventas <-> Inventario <-> Caja)
+    { from: 'EDU-0004', to: 'EDU-0002', label: '6. Descuenta stock FEFO', style: 'solid', fSide: 'right', tSide: 'left', clean: true },
+    { from: 'EDU-0002', to: 'EDU-0011', label: '8. Ventas por turno', style: 'solid',  fSide: 'right',  tSide: 'left', clean: true },
+    { from: 'EDU-0004', to: 'EDU-0011', label: '8. Registra ventas turno', style: 'solid', fSide: 'bottom', tSide: 'bottom', clean: false, dip: 26 },
+
+    // Corredor Nivel 3 -> Nivel 4 (Hacia Servicios ACID, Reportes y POE)
+    { from: 'EDU-0004', to: 'MOD-ACID', label: 'Transacción venta',   style: 'acid',   fSide: 'bottom', tSide: 'top', clean: true,  yRatio: 0.45 },
+    { from: 'EDU-0002', to: 'EDU-0010', label: '10. Existencias',     style: 'solid',  fSide: 'bottom', tSide: 'top', clean: true,  yRatio: 0.42 },
+    { from: 'EDU-0002', to: 'EDU-0012', label: '13. Control lotes/POE',style: 'solid', fSide: 'bottom', tSide: 'top', clean: true,  yRatio: 0.65 },
+    { from: 'EDU-0004', to: 'EDU-0010', label: '11. Datos de ventas', style: 'solid',  fSide: 'bottom', tSide: 'top', clean: false, yRatio: 0.75 },
+    { from: 'EDU-0007', to: 'EDU-0010', label: '12. Datos compras',   style: 'dashed', fSide: 'bottom', tSide: 'top', clean: false, yRatio: 0.55 },
+    { from: 'EDU-0007', to: 'EDU-0012', label: '14. Control compras', style: 'dashed', fSide: 'bottom', tSide: 'top', clean: false, yRatio: 0.40 },
+    { from: 'EDU-0009', to: 'EDU-0012', label: '15. Prov. calificados',style: 'dashed',fSide: 'bottom', tSide: 'top', clean: false, yRatio: 0.50 },
+    { from: 'EDU-0008', to: 'EDU-0012', label: '16. Datos sanitarios',style: 'dashed', fSide: 'bottom', tSide: 'top', clean: false, yRatio: 0.60 },
+
+    // Corredor Nivel 4 -> Nivel 5 (Persistencia y Respaldo)
+    { from: 'MOD-ACID', to: 'MOD-DB',   label: 'Commit ACID + Audit', style: 'acid',   fSide: 'bottom', tSide: 'top', clean: true,  yRatio: 0.50 },
+    { from: 'MOD-DB',   to: 'MOD-BAK',  label: 'Copia 24h (RNF-0002)',style: 'acid',   fSide: 'right',  tSide: 'left',clean: true },
+    { from: 'MOD-BAK',  to: 'MOD-HW',   label: 'Alojado en Local 1',  style: 'acid',   fSide: 'right',  tSide: 'left',clean: true }
+  ];
+
+  function anchorOf(el, side) {
+    const cRect = canvas.getBoundingClientRect();
+    const r = el.getBoundingClientRect();
+    const x = (r.left - cRect.left) / scale;
+    const y = (r.top - cRect.top) / scale;
+    const w = r.width / scale;
+    const h = r.height / scale;
+    if (side === 'top')    return { x: x + w / 2, y: y };
+    if (side === 'bottom') return { x: x + w / 2, y: y + h };
+    if (side === 'left')   return { x: x,         y: y + h / 2 };
+    if (side === 'right')  return { x: x + w,     y: y + h / 2 };
+    return { x: x + w / 2, y: y + h / 2 };
+  }
+
+  function makeOrtho(p1, p2, e) {
+    if ((e.fSide === 'right' && e.tSide === 'left') || (e.fSide === 'left' && e.tSide === 'right')) {
+      const mx = (p1.x + p2.x) / 2;
+      return {
+        d: `M ${p1.x} ${p1.y} L ${mx} ${p1.y} L ${mx} ${p2.y} L ${p2.x} ${p2.y}`,
+        lx: mx,
+        ly: (p1.y + p2.y) / 2 - 11
+      };
+    }
+    if (e.fSide === 'bottom' && e.tSide === 'bottom') {
+      const by = Math.max(p1.y, p2.y) + (e.dip || 24);
+      const mx = (p1.x + p2.x) / 2;
+      return {
+        d: `M ${p1.x} ${p1.y} L ${p1.x} ${by} L ${p2.x} ${by} L ${p2.x} ${p2.y}`,
+        lx: mx,
+        ly: by
+      };
+    }
+    const ratio = e.yRatio || 0.5;
+    const my = p1.y + (p2.y - p1.y) * ratio;
+    const lx = (p1.x + p2.x) / 2;
+    return {
+      d: `M ${p1.x} ${p1.y} L ${p1.x} ${my} L ${p2.x} ${my} L ${p2.x} ${p2.y}`,
+      lx: lx,
+      ly: my
+    };
+  }
+
+  function renderEdges() {
+    edgesContainer.innerHTML = '';
+    const focus = selectedId || hoveredId;
+    const mode = document.getElementById('edgeModeSelect').value;
+    const semRule = (!focus && activeSemanticCat !== 'ALL') ? SEMANTIC_RULES_N2[activeSemanticCat] : null;
+    const semNodes = semRule && semRule.nodes ? new Set(semRule.nodes) : null;
+
+    EDGES.forEach(e => {
+      const fEl = document.getElementById(e.from);
+      const tEl = document.getElementById(e.to);
+      if (!fEl || !tEl) return;
+
+      const isFocusActive = focus && (e.from === focus || e.to === focus);
+      let isSemActive = false;
+      if (semRule) {
+        const styleOk = !semRule.styles || semRule.styles.includes(e.style);
+        const nodeOk = !semNodes || (semNodes.has(e.from) || semNodes.has(e.to));
+        isSemActive = styleOk && nodeOk;
+      }
+
+      const isActive = isFocusActive || isSemActive;
+      if (mode === 'CLEAN' && !e.clean && !isActive) return;
+      if (mode === 'HOVER' && !isActive) return;
+
+      const p1 = anchorOf(fEl, e.fSide);
+      const p2 = anchorOf(tEl, e.tSide);
+      const gData = makeOrtho(p1, p2, e);
+
+      const grp = document.createElementNS('http://www.w3.org/2000/svg', 'g');
+      grp.setAttribute('class', 'edge-group');
+      if (focus || semRule) {
+        grp.classList.add(isActive ? 'active-edge' : 'dimmed');
+      }
+
+      const path = document.createElementNS('http://www.w3.org/2000/svg', 'path');
+      path.setAttribute('d', gData.d);
+      path.setAttribute('class', `edge-line ${e.style}`);
+      const mId = isActive ? 'arr-highlight' : (e.style === 'dashed' ? 'arr-dashed' : (e.style === 'acid' ? 'arr-acid' : 'arr-solid'));
+      path.setAttribute('marker-end', `url(#${mId})`);
+      if (isFocusActive) {
+        path.style.stroke = (e.from === focus) ? '#7c3aed' : '#047857';
+      }
+      grp.appendChild(path);
+
+      const w = e.label.length * 6.3 + 14;
+      const h = 19;
+      const rect = document.createElementNS('http://www.w3.org/2000/svg', 'rect');
+      rect.setAttribute('x', gData.lx - w / 2);
+      rect.setAttribute('y', gData.ly - h / 2);
+      rect.setAttribute('width', w);
+      rect.setAttribute('height', h);
+      rect.setAttribute('rx', 4);
+      rect.setAttribute('class', 'edge-badge-bg');
+      grp.appendChild(rect);
+
+      const txt = document.createElementNS('http://www.w3.org/2000/svg', 'text');
+      txt.setAttribute('x', gData.lx);
+      txt.setAttribute('y', gData.ly + 3.8);
+      txt.setAttribute('text-anchor', 'middle');
+      txt.setAttribute('class', 'edge-badge-txt');
+      txt.textContent = e.label;
+      grp.appendChild(txt);
+
+      edgesContainer.appendChild(grp);
+    });
+  }
+
+  function applyFocusState() {
+    const focus = selectedId || hoveredId;
+    const allNodes = document.querySelectorAll('.mod-node, .actor-box');
+
+    if (!focus) {
+      if (activeSemanticCat !== 'ALL' && SEMANTIC_RULES_N2[activeSemanticCat]) {
+        const rule = SEMANTIC_RULES_N2[activeSemanticCat];
+        const allowed = rule.nodes ? new Set(rule.nodes) : null;
+        allNodes.forEach(n => {
+          n.classList.remove('selected-node', 'neighbor-in', 'neighbor-out', 'dimmed');
+          if (!allowed || allowed.has(n.id)) {
+            n.classList.add('selected-node');
+          } else {
+            n.classList.add('dimmed');
+          }
+        });
+      } else {
+        allNodes.forEach(n => n.classList.remove('selected-node', 'neighbor-in', 'neighbor-out', 'dimmed'));
+      }
+      renderEdges();
+      return;
+    }
+
+    const ins = new Set();
+    const outs = new Set();
+    EDGES.forEach(e => {
+      if (e.to === focus) ins.add(e.from);
+      if (e.from === focus) outs.add(e.to);
+    });
+
+    allNodes.forEach(n => {
+      n.classList.remove('selected-node', 'neighbor-in', 'neighbor-out', 'dimmed');
+      if (n.id === focus) n.classList.add('selected-node');
+      else if (ins.has(n.id)) n.classList.add('neighbor-in');
+      else if (outs.has(n.id)) n.classList.add('neighbor-out');
+      else n.classList.add('dimmed');
+    });
+
+    renderEdges();
+  }
+
+  function clearFocus() {
+    selectedId = null;
+    hoveredId = null;
+    activeSemanticCat = 'ALL';
+    document.querySelectorAll('#semPopover .sem-item').forEach(el => {
+      el.classList.toggle('active', el.getAttribute('data-sem') === 'ALL');
+    });
+    applyFocusState();
+  }
+
+  document.querySelectorAll('.mod-node, .actor-box').forEach(node => {
+    node.addEventListener('mouseenter', () => {
+      if (!selectedId) {
+        hoveredId = node.id;
+        applyFocusState();
+      }
+    });
+    node.addEventListener('mouseleave', () => {
+      if (!selectedId) {
+        hoveredId = null;
+        applyFocusState();
+      }
+    });
+    node.addEventListener('click', (ev) => {
+      ev.stopPropagation();
+      selectedId = (selectedId === node.id) ? null : node.id;
+      applyFocusState();
+    });
+  });
+
+  function lodForScale(s) {
+    if (s < TH_MED) return 'lod-skeleton';
+    if (s < TH_MIC) return 'lod-medium';
+    return 'lod-micro';
+  }
+
+  function syncTransform() {
+    canvas.style.transform = `translate(${panX}px, ${panY}px) scale(${scale})`;
+    const pct = Math.round(scale * 100);
+    const prev = canvas.dataset.lod || '';
+    const next = lodForScale(scale);
+
+    canvas.classList.remove('lod-skeleton', 'lod-medium', 'lod-micro');
+    canvas.classList.add(next);
+    canvas.dataset.lod = next;
+
+    btnSkeleton.classList.toggle('active', next === 'lod-skeleton');
+    btnMedium.classList.toggle('active', next === 'lod-medium');
+    btnMicro.classList.toggle('active', next === 'lod-micro');
+
+    if (next === 'lod-skeleton') {
+      zoomLabel.textContent = `${pct}% · ESQUELETO`;
+      zoomLabel.style.background = '#fef08a';
+    } else if (next === 'lod-medium') {
+      zoomLabel.textContent = `${pct}% · PÍLDORAS CR`;
+      zoomLabel.style.background = '#bae6fd';
+    } else {
+      zoomLabel.textContent = `${pct}% · DETALLE MICRO`;
+      zoomLabel.style.background = '#bbf7d0';
+    }
+
+    if (prev !== next) {
+      requestAnimationFrame(() => renderEdges());
+    }
+  }
+
+  function setZoomMode(mode) {
+    if (mode === 'skeleton') { scale = 0.54; panX = 42; panY = 12; }
+    else if (mode === 'medium') { scale = 0.76; panX = 24; panY = 10; }
+    else { scale = 0.96; panX = 16; panY = 8; }
+    syncTransform();
+    requestAnimationFrame(() => renderEdges());
+  }
+
+  viewport.addEventListener('mousedown', e => {
+    if (e.target.closest('.mod-node, .actor-box')) return;
+    isPanning = true;
+    viewport.classList.add('panning');
+    sx = e.clientX - panX;
+    sy = e.clientY - panY;
+  });
+  window.addEventListener('mousemove', e => {
+    if (!isPanning) return;
+    panX = e.clientX - sx;
+    panY = e.clientY - sy;
+    syncTransform();
+  });
+  window.addEventListener('mouseup', () => {
+    isPanning = false;
+    viewport.classList.remove('panning');
+  });
+  viewport.addEventListener('wheel', e => {
+    e.preventDefault();
+    const factor = e.deltaY < 0 ? 1.1 : 0.9;
+    const next = Math.min(Math.max(scale * factor, 0.32), 2.0);
+    const rect = viewport.getBoundingClientRect();
+    const mx = e.clientX - rect.left;
+    const my = e.clientY - rect.top;
+    panX = mx - (mx - panX) * (next / scale);
+    panY = my - (my - panY) * (next / scale);
+    scale = next;
+    syncTransform();
+  }, { passive: false });
+
+  window.addEventListener('resize', () => renderEdges());
+  window.addEventListener('load', () => {
+    syncTransform();
+    setTimeout(renderEdges, 80);
+  });
+</script>
+</body>
+</html>

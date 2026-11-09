@@ -1,0 +1,1887 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>ASW-0001 (Nivel 1): Arquitectura en 5 Capas y Flujo Relacional — Innofarma V01.00</title>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&family=JetBrains+Mono:wght@500;600;700;800&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg-canvas: #f8fafc;
+    --ink: #0f172a;
+    --ink-muted: #475569;
+    --c-l1: #f0f7ff;
+    --c-l2: #fffbeb;
+    --c-l3: #ecfdf5;
+    --c-l4: #f5f3ff;
+    --c-l5: #f1f5f9;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body {
+    font-family: 'Inter', sans-serif;
+    background-color: var(--bg-canvas);
+    color: var(--ink);
+    overflow: hidden;
+    height: 100vh;
+    width: 100vw;
+    user-select: none;
+  }
+
+  /* BARRA SUPERIOR COMPACTA DE 1 SOLA LÍNEA (SIN DESBORDES) */
+  .topbar {
+    position: fixed;
+    top: 0; left: 0; right: 0;
+    height: 46px;
+    background: #ffffff;
+    border-bottom: 2.5px solid #0f172a;
+    z-index: 200;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 0 14px;
+    gap: 8px;
+    white-space: nowrap;
+    overflow-x: auto;
+  }
+  .brand-block {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    flex-shrink: 0;
+  }
+  .brand-code {
+    background: #0f172a;
+    color: #fff;
+    font-family: 'JetBrains Mono', monospace;
+    font-weight: 800;
+    font-size: 11px;
+    padding: 4px 8px;
+  }
+  .brand-title {
+    font-size: 12px;
+    font-weight: 800;
+    text-transform: uppercase;
+    letter-spacing: 0.2px;
+  }
+
+  .controls-group {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    flex-shrink: 0;
+  }
+  .ctrl-label {
+    font-size: 10px;
+    font-weight: 800;
+    text-transform: uppercase;
+    color: var(--ink-muted);
+  }
+  select.ctrl-select, input.ctrl-search {
+    font-family: 'Inter', sans-serif;
+    font-size: 11px;
+    font-weight: 700;
+    padding: 4px 7px;
+    border: 2px solid #0f172a;
+    background: #fff;
+    color: #0f172a;
+    cursor: pointer;
+    height: 28px;
+  }
+  input.ctrl-search {
+    width: 135px;
+    cursor: text;
+  }
+  .btn-ctrl {
+    font-family: 'Inter', sans-serif;
+    font-size: 10.5px;
+    font-weight: 800;
+    padding: 0 9px;
+    height: 28px;
+    border: 2px solid #0f172a;
+    background: #fff;
+    color: #0f172a;
+    cursor: pointer;
+    box-shadow: 2px 2px 0 #0f172a;
+    text-transform: uppercase;
+  }
+  .btn-ctrl:hover { background: #f1f5f9; }
+  .btn-ctrl.active-mode {
+    background: #0f172a;
+    color: #ffffff;
+  }
+  .zoom-pill {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 10.5px;
+    font-weight: 800;
+    padding: 0 9px;
+    height: 28px;
+    line-height: 24px;
+    border: 2px solid #0f172a;
+    background: #fef08a;
+    color: #0f172a;
+  }
+
+  /* PANEL FLOTANTE INTERACTIVO DE SEMÁNTICA RELACIONAL (SIN BARRA INFERIOR) */
+  .sem-popover {
+    position: fixed;
+    top: 54px;
+    right: 16px;
+    width: 390px;
+    max-height: calc(100vh - 70px);
+    overflow-y: auto;
+    background: #ffffff;
+    border: 2.5px solid #0f172a;
+    box-shadow: 6px 6px 0px #0f172a;
+    padding: 13px 14px;
+    z-index: 300;
+    display: none;
+  }
+  .sem-popover.open { display: block; }
+  .sem-head {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    font-size: 12px;
+    font-weight: 900;
+    text-transform: uppercase;
+    margin-bottom: 4px;
+  }
+  .sem-sub {
+    font-size: 10.5px;
+    color: #475569;
+    font-weight: 600;
+    margin-bottom: 8px;
+    padding-bottom: 6px;
+    border-bottom: 1.5px solid #cbd5e1;
+  }
+  .sem-sec {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 9.5px;
+    font-weight: 800;
+    text-transform: uppercase;
+    color: #047857;
+    margin: 7px 0 4px 0;
+  }
+  .sem-item {
+    display: flex;
+    align-items: flex-start;
+    gap: 9px;
+    padding: 6px 8px;
+    border: 1.5px solid transparent;
+    border-radius: 5px;
+    cursor: pointer;
+    font-size: 11px;
+    line-height: 1.32;
+    transition: all 0.12s;
+  }
+  .sem-item:hover {
+    background: #f1f5f9;
+    border-color: #cbd5e1;
+  }
+  .sem-item.active-sem {
+    background: #fefce8;
+    border-color: #0f172a;
+    box-shadow: 2px 2px 0 #0f172a;
+  }
+  .sem-box {
+    width: 16px;
+    height: 16px;
+    flex-shrink: 0;
+    margin-top: 2px;
+  }
+  .sem-line {
+    width: 22px;
+    height: 16px;
+    flex-shrink: 0;
+    display: flex;
+    align-items: center;
+    margin-top: 2px;
+  }
+
+  /* LIENZO PAN & ZOOM (HASTA EL BORDE INFERIOR, SIN BARRA INFERIOR) */
+  #viewport {
+    position: fixed;
+    top: 46px;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    overflow: hidden;
+    cursor: grab;
+    background-image: radial-gradient(#cbd5e1 1.2px, transparent 1.2px);
+    background-size: 24px 24px;
+  }
+  #viewport.panning { cursor: grabbing; }
+
+  #canvas {
+    position: absolute;
+    top: 0; left: 0;
+    transform-origin: 0 0;
+    width: 2360px;
+    padding: 36px 90px 80px 90px;
+  }
+
+  /* SVG OVERLAY PARA FLECHAS LIMPIAS POR CORREDORES */
+  #relations-svg {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    pointer-events: none;
+    z-index: 35;
+    overflow: visible;
+  }
+  .rel-path {
+    fill: none;
+    stroke-width: 2.5px;
+    transition: opacity 0.15s, stroke-width 0.15s;
+  }
+  .rel-path.intra { stroke: #047857; }
+  .rel-path.inter { stroke: #0f172a; stroke-dasharray: 7 5; }
+  .rel-path.data  { stroke: #6d28d9; }
+
+  .rel-label-bg {
+    fill: #ffffff;
+    stroke: #0f172a;
+    stroke-width: 1.8px;
+  }
+  .rel-label-text {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 11px;
+    font-weight: 800;
+    fill: #0f172a;
+  }
+  .rel-group { transition: opacity 0.15s; }
+  .rel-group.dimmed { opacity: 0.06 !important; }
+  .rel-group.active-rel .rel-path {
+    stroke-width: 4.2px !important;
+    stroke-dasharray: none !important;
+  }
+  .rel-group.active-rel .rel-label-bg {
+    fill: #fef08a !important;
+    stroke-width: 2.5px !important;
+  }
+
+  /* MEMBRETE SUPERIOR */
+  .sheet-header {
+    background: #ffffff;
+    border: 3px solid #0f172a;
+    box-shadow: 5px 5px 0px #0f172a;
+    padding: 14px 22px;
+    margin-bottom: 44px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    position: relative;
+    z-index: 20;
+  }
+  .sheet-header h1 {
+    font-size: 18px;
+    font-weight: 900;
+    text-transform: uppercase;
+    letter-spacing: 0.3px;
+  }
+  .sheet-header p {
+    font-size: 12px;
+    font-weight: 600;
+    color: var(--ink-muted);
+    margin-top: 2px;
+  }
+  .sheet-meta {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 11px;
+    font-weight: 800;
+    text-align: right;
+    line-height: 1.45;
+  }
+
+  /* CONTENEDORES DE LAS 5 CAPAS CON CORREDORES AMPLIOS ENTRE ELLAS */
+  .layer-band {
+    border: 3px solid #0f172a;
+    box-shadow: 6px 6px 0px #0f172a;
+    margin-bottom: 92px; /* Corredor amplio de 92px para flechas entre capas */
+    background: #ffffff;
+    position: relative;
+    z-index: 20;
+  }
+  .layer-band.l1 { background: var(--c-l1); }
+  .layer-band.l2 { background: var(--c-l2); }
+  .layer-band.l3 { background: var(--c-l3); border-width: 3.5px; }
+  .layer-band.l4 { background: var(--c-l4); }
+  .layer-band.l5 { background: var(--c-l5); margin-bottom: 30px; }
+
+  .layer-header {
+    background: #0f172a;
+    color: #ffffff;
+    padding: 9px 18px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+  }
+  .layer-title-wrap {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+  }
+  .layer-num {
+    background: #fef08a;
+    color: #0f172a;
+    font-family: 'JetBrains Mono', monospace;
+    font-weight: 900;
+    font-size: 12px;
+    padding: 2px 8px;
+  }
+  .layer-name {
+    font-size: 14px;
+    font-weight: 900;
+    letter-spacing: 0.4px;
+    text-transform: uppercase;
+  }
+  .layer-team-badge {
+    background: #38bdf8;
+    color: #0f172a;
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 11px;
+    font-weight: 800;
+    padding: 2px 9px;
+  }
+
+  /* GRILLA ESPACIOSA DE COMPONENTES */
+  .layer-grid {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 54px; /* Corredores amplios entre tarjetas */
+    padding: 34px 36px;
+  }
+  .layer-band.l3 .layer-grid {
+    grid-template-columns: repeat(3, 1fr);
+    row-gap: 88px; /* Corredor horizontal amplio dentro de Capa 3 para las flechas EDU */
+    column-gap: 78px;
+    padding: 40px 44px;
+  }
+
+  /* TARJETA DE COMPONENTE */
+  .comp-card {
+    background: #ffffff;
+    border: 2.5px solid #0f172a;
+    box-shadow: 5px 5px 0px #0f172a;
+    padding: 18px 20px;
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    position: relative;
+    transition: transform 0.15s, box-shadow 0.15s, opacity 0.18s;
+    cursor: pointer;
+    z-index: 25;
+  }
+  .comp-card:hover, .comp-card.selected-card {
+    transform: translate(-2px, -2px);
+    box-shadow: 8px 8px 0px #1d4ed8;
+    border-color: #1d4ed8;
+    background: #fefce8;
+  }
+  .comp-card.neighbor-in {
+    border-color: #047857;
+    box-shadow: 7px 7px 0px #047857;
+  }
+  .comp-card.neighbor-out {
+    border-color: #7c3aed;
+    box-shadow: 7px 7px 0px #7c3aed;
+  }
+  .comp-card.dimmed {
+    opacity: 0.15;
+    filter: grayscale(85%);
+  }
+  .comp-card.highlight-match {
+    outline: 4px solid #2563eb;
+  }
+
+  /* ELEMENTOS DE LA TARJETA */
+  .comp-top {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    border-bottom: 2px solid #0f172a;
+    padding-bottom: 6px;
+  }
+  .comp-id-tag {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 11px;
+    font-weight: 800;
+    background: #0f172a;
+    color: #fff;
+    padding: 2px 8px;
+  }
+  .comp-team-tag {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 10px;
+    font-weight: 800;
+    background: #e2e8f0;
+    color: #0f172a;
+    border: 1.5px solid #0f172a;
+    padding: 1px 6px;
+  }
+  .comp-title {
+    font-size: 16.5px;
+    font-weight: 900;
+    color: #0f172a;
+    line-height: 1.25;
+  }
+  .comp-short-sub {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 11.5px;
+    font-weight: 700;
+    color: #334155;
+  }
+
+  /* NIVEL MEDIO (SOLO EN VISTA MEDIA Y MICRO) */
+  .mid-details {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+  }
+  .comp-macro-role {
+    font-size: 12px;
+    font-weight: 600;
+    color: #334155;
+    line-height: 1.35;
+  }
+  .macro-summary-pills {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 5px;
+  }
+  .m-pill {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 10px;
+    font-weight: 800;
+    padding: 2px 6px;
+    border: 1.5px solid #0f172a;
+  }
+  .m-pill.edu { background: #dcfce7; color: #065f46; }
+  .m-pill.rnf { background: #dbeafe; color: #1e40af; }
+  .m-pill.risk { background: #fee2e2; color: #991b1b; }
+  .m-pill.rev { background: #fef3c7; color: #92400e; border-style: dashed; }
+
+  /* NIVEL MICRO PROFUNDO (SOLO EN VISTA MICRO >= 90%) */
+  .micro-details {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    border-top: 1.5px dashed #94a3b8;
+    padding-top: 8px;
+    font-size: 11.5px;
+  }
+  .rel-io-box {
+    background: #f1f5f9;
+    border: 1.5px solid #0f172a;
+    padding: 7px 9px;
+    font-size: 10.5px;
+    display: flex;
+    flex-direction: column;
+    gap: 3px;
+  }
+  .rel-io-title {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 9.5px;
+    font-weight: 900;
+    text-transform: uppercase;
+    color: #0f172a;
+  }
+  .rel-io-line b.in { color: #047857; font-family: 'JetBrains Mono', monospace; }
+  .rel-io-line b.out { color: #6d28d9; font-family: 'JetBrains Mono', monospace; }
+
+  .detail-block {
+    background: #f8fafc;
+    border: 1.5px solid #cbd5e1;
+    padding: 7px 9px;
+  }
+  .detail-block.strength-block { background: #f0fdf4; border-color: #16a34a; }
+  .detail-block.risk-block { background: #fef2f2; border: 2px solid #dc2626; }
+  .detail-block.review-block { background: #fffbeb; border: 2px dashed #d97706; }
+  .detail-heading {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 10px;
+    font-weight: 800;
+    text-transform: uppercase;
+    margin-bottom: 3px;
+  }
+  .detail-list {
+    list-style: none;
+    display: flex;
+    flex-direction: column;
+    gap: 3px;
+  }
+  .detail-list li {
+    line-height: 1.35;
+    font-weight: 500;
+    color: #1e293b;
+    padding-left: 10px;
+    position: relative;
+  }
+  .detail-list li::before {
+    content: "▪";
+    position: absolute;
+    left: 0;
+    font-weight: 900;
+  }
+  .code-inline {
+    font-family: 'JetBrains Mono', monospace;
+    font-weight: 700;
+    font-size: 10.5px;
+    background: rgba(15,23,42,0.08);
+    padding: 0 4px;
+  }
+
+  /* ===================================================================== */
+  /* REGLAS DE ZOOM SEMÁNTICO DE 3 NIVELES (CERO CORTISOL DE LEJOS)        */
+  /* ===================================================================== */
+
+  /* NIVEL 1: ESQUELETO MINIMALISTA (< 68% ZOOM) */
+  #canvas.lod-skeleton .mid-details,
+  #canvas.lod-skeleton .micro-details,
+  #canvas.lod-skeleton .comp-team-tag {
+    display: none !important;
+  }
+  #canvas.lod-skeleton .comp-card {
+    padding: 22px 20px;
+    text-align: center;
+    align-items: center;
+    justify-content: center;
+    min-height: 118px;
+  }
+  #canvas.lod-skeleton .comp-top {
+    border-bottom: none;
+    padding-bottom: 2px;
+    justify-content: center;
+  }
+  #canvas.lod-skeleton .comp-id-tag {
+    font-size: 12px;
+    padding: 3px 10px;
+  }
+  #canvas.lod-skeleton .comp-title {
+    font-size: 20px;
+    font-weight: 900;
+    line-height: 1.2;
+  }
+  #canvas.lod-skeleton .comp-short-sub {
+    font-size: 13px;
+    color: #475569;
+  }
+
+  /* NIVEL 2: VISTA MEDIA CATÁLOGO (68% a 90% ZOOM) */
+  #canvas.lod-medium .micro-details {
+    display: none !important;
+  }
+</style>
+</head>
+<body>
+
+<!-- BARRA SUPERIOR COMPACTA DE 1 LÍNEA -->
+<header class="topbar">
+  <div class="brand-block">
+    <span class="brand-code">ASW-0001 · N1</span>
+    <span class="brand-title">5 Capas + Relaciones (Fig. 3, 4 y 5)</span>
+  </div>
+
+  <div class="controls-group">
+    <span class="ctrl-label">Versión:</span>
+    <select id="versionSelect" class="ctrl-select" onchange="applyFilters()">
+      <option value="V01.00" selected>V01.00 — Actual (6 en revisión)</option>
+      <option value="V00.04">V00.04 — Con Riesgos MRI</option>
+      <option value="V00.03">V00.03 — Trazabilidad CR</option>
+      <option value="V00.02">V00.02 — Red Híbrida VPN</option>
+      <option value="V00.01">V00.01 — Esqueleto Base</option>
+    </select>
+
+    <span class="ctrl-label">Equipo:</span>
+    <select id="teamSelect" class="ctrl-select" onchange="applyFilters()">
+      <option value="ALL" selected>Todos (4 Equipos)</option>
+      <option value="EQ1">EQ1: Taylor + Joshua</option>
+      <option value="EQ2">EQ2: Ronald + Sebastian</option>
+      <option value="EQ3">EQ3: Joel + Cristian</option>
+      <option value="EQ4">EQ4: Gabriela + Jeremy</option>
+    </select>
+
+    <span class="ctrl-label">Flechas:</span>
+    <select id="relFilterSelect" class="ctrl-select" onchange="drawAllRelations()">
+      <option value="CORE" selected>Esenciales Limpias (Sin cruces)</option>
+      <option value="INTRA">Solo entre Módulos EDU (Capa 3)</option>
+      <option value="ALL">Todas las relaciones (24)</option>
+      <option value="HOVER">Solo al pasar el mouse / clic</option>
+    </select>
+
+    <input type="text" id="searchInput" class="ctrl-search" placeholder="Buscar EDU, RNF..." oninput="applyFilters()">
+
+    <button class="btn-ctrl active-mode" id="btnSkeleton" onclick="setSkeletonView()">1. Lejos (Esqueleto)</button>
+    <button class="btn-ctrl" id="btnMedium" onclick="setMediumView()">2. Medio (Píldoras CR)</button>
+    <button class="btn-ctrl" id="btnMicro" onclick="setMicroView()">3. Cerca (Detalle Total)</button>
+    <button class="btn-ctrl" id="btnSemToggle" onclick="toggleSemPopover()">Semántica Relacional</button>
+    <button class="btn-ctrl" onclick="resetSelection()">Limpiar</button>
+    <div id="zoomIndicator" class="zoom-pill">52% · ESQUELETO</div>
+  </div>
+</header>
+
+<!-- PANEL INTERACTIVO DE SEMÁNTICA RELACIONAL (SIN NOMBRES DE COLORES) -->
+<aside class="sem-popover" id="semPopover">
+  <div class="sem-head">
+    <span>Semántica Relacional y Arquitectónica</span>
+    <div style="display:flex;gap:6px;">
+      <button onclick="applySemanticFilter('ALL')" style="background:#0f172a;color:#fff;border:none;padding:2px 7px;font-size:10px;font-weight:800;cursor:pointer;">Ver Todo</button>
+      <button onclick="toggleSemPopover()" style="background:none;border:none;font-size:13px;font-weight:900;cursor:pointer;">✕</button>
+    </div>
+  </div>
+  <div class="sem-sub">Haz clic en cualquier categoría para resaltar sus módulos y las flechas que los relacionan.</div>
+
+  <div class="sem-sec">1. Flujos y Relaciones entre Componentes</div>
+  <div class="sem-item" data-sem="REL_INTRA" onclick="applySemanticFilter('REL_INTRA')">
+    <span class="sem-line"><svg width="22" height="12"><line x1="0" y1="6" x2="18" y2="6" stroke="#047857" stroke-width="3"/><polygon points="15,2 22,6 15,10" fill="#047857"/></svg></span>
+    <div><b>Relación Funcional de Negocio (EDU ↔ EDU):</b> Intercambio de catálogo, incremento/descuento de stock por lote FEFO, turnos y controles POE.</div>
+  </div>
+  <div class="sem-item" data-sem="REL_INTER" onclick="applySemanticFilter('REL_INTER')">
+    <span class="sem-line"><svg width="22" height="12"><line x1="0" y1="6" x2="18" y2="6" stroke="#0f172a" stroke-width="2.5" stroke-dasharray="4 3"/><polygon points="15,2 22,6 15,10" fill="#0f172a"/></svg></span>
+    <div><b>Flujo de Acceso y Seguridad entre Capas:</b> Peticiones desde terminales web, túnel VPN WireGuard y validación de permisos RBAC.</div>
+  </div>
+  <div class="sem-item" data-sem="REL_DATA" onclick="applySemanticFilter('REL_DATA')">
+    <span class="sem-line"><svg width="22" height="12"><line x1="0" y1="6" x2="18" y2="6" stroke="#6d28d9" stroke-width="3"/><polygon points="15,2 22,6 15,10" fill="#6d28d9"/></svg></span>
+    <div><b>Persistencia Transaccional ACID y Respaldo:</b> Escritura atómica en PostgreSQL, bitácora forense inmutable y volcado diario 24h.</div>
+  </div>
+
+  <div class="sem-sec">2. Capas, Dominios y Estado de Revisión</div>
+  <div class="sem-item" data-sem="DOM_UI" onclick="applySemanticFilter('DOM_UI')">
+    <span class="sem-box" style="background:#dbeafe;border:2px solid #1d4ed8;"></span>
+    <div><b>Interacción y Terminales Web (Capa 1):</b> Atención en Local 1 (LAN) y Local 2 (VPN), consola administrativa y cola contingente.</div>
+  </div>
+  <div class="sem-item" data-sem="DOM_SEC" onclick="applySemanticFilter('DOM_SEC')">
+    <span class="sem-box" style="background:#fef3c7;border:2px solid #b45309;"></span>
+    <div><b>Seguridad, Red Privada y Accesos (Capa 2):</b> Servidor WireGuard VPN, controlador web, autenticación RBAC (EDU-0006) y auditoría.</div>
+  </div>
+  <div class="sem-item" data-sem="DOM_CORE" onclick="applySemanticFilter('DOM_CORE')">
+    <span class="sem-box" style="background:#d1fae5;border:2px solid #047857;"></span>
+    <div><b>Núcleo de Dominio Farmacéutico (Capa 3):</b> Catálogo, compras, inventario por lotes FEFO, ventas POS, caja, reportes y POE.</div>
+  </div>
+  <div class="sem-item" data-sem="DOM_DATA" onclick="applySemanticFilter('DOM_DATA')">
+    <span class="sem-box" style="background:#ede9fe;border:2px solid #6d28d9;"></span>
+    <div><b>Persistencia y Datos (Capa 4 · BDD_0001):</b> Base de datos central marifarma_gestion_db, bitácora inmutable, índices FEFO y caché local.</div>
+  </div>
+  <div class="sem-item" data-sem="DOM_HW" onclick="applySemanticFilter('DOM_HW')">
+    <span class="sem-box" style="background:#e2e8f0;border:2px solid #334155;"></span>
+    <div><b>Infraestructura Física Confirmada (Capa 5):</b> 2x PC Lenovo ThinkCentre i3 (Local 1 Servidor y Local 2 Cliente), UPS 1000VA y backup.</div>
+  </div>
+  <div class="sem-item" data-sem="STATE_RISK" onclick="applySemanticFilter('STATE_RISK')">
+    <span class="sem-box" style="background:#fee2e2;border:2px solid #dc2626;"></span>
+    <div><b>Puntos con Riesgo Crítico (Matrices MRI):</b> Módulos expuestos a caída de red WAN, colisión de stock simultáneo o corte eléctrico.</div>
+  </div>
+  <div class="sem-item" data-sem="STATE_REV" onclick="applySemanticFilter('STATE_REV')">
+    <span class="sem-box" style="background:#fef08a;border:2px dashed #d97706;"></span>
+    <div><b>Decisiones Bajo Revisión (R1 a R6):</b> Puntos abiertos en validación final con el cliente y ajuste puntual del Catálogo de Requisitos.</div>
+  </div>
+</aside>
+
+<!-- LIENZO PAN & ZOOM -->
+<div id="viewport">
+  <div id="canvas" class="lod-skeleton">
+
+    <!-- SVG PARA FLECHAS ORTOGONALES LIMPIAS -->
+    <svg id="relations-svg">
+      <defs>
+        <marker id="arrow-intra" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="6.5" markerHeight="6.5" orient="auto-start-reverse">
+          <path d="M 0 1 L 10 5 L 0 9 z" fill="#047857"/>
+        </marker>
+        <marker id="arrow-inter" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="6.5" markerHeight="6.5" orient="auto-start-reverse">
+          <path d="M 0 1 L 10 5 L 0 9 z" fill="#0f172a"/>
+        </marker>
+        <marker id="arrow-data" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="6.5" markerHeight="6.5" orient="auto-start-reverse">
+          <path d="M 0 1 L 10 5 L 0 9 z" fill="#6d28d9"/>
+        </marker>
+        <marker id="arrow-active" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="7.5" markerHeight="7.5" orient="auto-start-reverse">
+          <path d="M 0 1 L 10 5 L 0 9 z" fill="#dc2626"/>
+        </marker>
+      </defs>
+      <g id="relations-layer"></g>
+    </svg>
+
+    <!-- MEMBRETE DE INGENIERÍA -->
+    <div class="sheet-header">
+      <div>
+        <h1>ARQUITECTURA DE SOFTWARE DEFINITIVA (ASW-0001) — 5 CAPAS Y RELACIONES FUNCIONALES</h1>
+        <p>De lejos: Esqueleto limpio de módulos y relaciones · Al acercar (rueda del mouse): Píldoras del Catálogo (CR), Tablas BDD_0001, Fortalezas y Riesgos MRI.</p>
+      </div>
+      <div class="sheet-meta">
+        <div>VERSIÓN: <span id="metaVersion">V01.00</span> · 2x ThinkCentre i3 (8GB RAM, 256GB NVMe)</div>
+        <div style="color:#047857;">HAZ CLIC EN CUALQUIER CAJA PARA ILUMINAR SUS CONEXIONES</div>
+      </div>
+    </div>
+
+    <!-- ================================================================= -->
+    <!-- CAPA 1: INTERACCIÓN Y CLIENTES                                    -->
+    <!-- ================================================================= -->
+    <section class="layer-band l1" data-layer="1">
+      <div class="layer-header">
+        <div class="layer-title-wrap">
+          <span class="layer-num">CAPA 1</span>
+          <span class="layer-name">Interacción y Clientes Web en Navegador (RNF-0001, RNF-0003, RNF-0004)</span>
+        </div>
+        <span class="layer-team-badge">EQUIPO 1: AUT-0001 (Taylor) · AUT-0007 (Joshua)</span>
+      </div>
+
+      <div class="layer-grid">
+        <!-- C1-POS1 -->
+        <article class="comp-card" id="C1-POS1" data-team="EQ1" data-minver="1">
+          <div class="comp-top">
+            <span class="comp-id-tag">C1-POS-L1 · LAN</span>
+            <span class="comp-team-tag">EQ1: AUT-0001 / 0007</span>
+          </div>
+          <div class="comp-title">Terminal Caja Local 1</div>
+          <div class="comp-short-sub">[Atención Local · Red LAN]</div>
+
+          <div class="mid-details">
+            <div class="comp-macro-role">Interfaz SPA de despacho rápido en PC ThinkCentre Local 1 sobre LAN Gigabit (&lt;2s).</div>
+            <div class="macro-summary-pills">
+              <span class="m-pill edu">EDU-0004 / EDU-0011</span>
+              <span class="m-pill edu">ILA-0002 / ILA-0007</span>
+              <span class="m-pill rnf">RNF-0001 / RNF-0003</span>
+              <span class="m-pill risk">MRI-0010 / MRI-0011</span>
+            </div>
+          </div>
+
+          <div class="micro-details">
+            <div class="rel-io-box">
+              <div class="rel-io-title">Relaciones Directas</div>
+              <div class="rel-io-line"><b class="out">──► ENVÍA [1]:</b> Peticiones HTTP LAN hacia <code>C2-GW (Controlador Web)</code>.</div>
+            </div>
+            <div class="detail-block">
+              <div class="detail-heading">Requisitos RF y RNF</div>
+              <ul class="detail-list">
+                <li><span class="code-inline">EDU-0004 / ILA-0002</span>: Búsqueda rápida, conversión de presentación y cobro POS.</li>
+                <li><span class="code-inline">RNF-0003</span>: Usabilidad ≤ 10 min de aprendizaje sin asistencia externa.</li>
+              </ul>
+            </div>
+            <div class="detail-block risk-block">
+              <div class="detail-heading">Riesgos MRI</div>
+              <ul class="detail-list">
+                <li><span class="code-inline">MRI-0010 / T-016</span>: Doble clic en confirmar venta mitigado con bloqueo de botón y UUID.</li>
+              </ul>
+            </div>
+          </div>
+        </article>
+
+        <!-- C1-POS2 -->
+        <article class="comp-card" id="C1-POS2" data-team="EQ1" data-minver="2">
+          <div class="comp-top">
+            <span class="comp-id-tag">C1-POS-L2 · VPN</span>
+            <span class="comp-team-tag">EQ1: AUT-0001 / 0007</span>
+          </div>
+          <div class="comp-title">Terminal Caja Local 2</div>
+          <div class="comp-short-sub">[Atención Remota · Cliente VPN]</div>
+
+          <div class="mid-details">
+            <div class="comp-macro-role">Navegador en PC ThinkCentre del Local 2 conectado al servidor del Local 1 por túnel WireGuard.</div>
+            <div class="macro-summary-pills">
+              <span class="m-pill edu">EDU-0004 / EDU-0002</span>
+              <span class="m-pill rnf">RNF-0004 / RNF-0006</span>
+              <span class="m-pill risk">MRI-0005 (Crítico)</span>
+              <span class="m-pill rev">REVISIÓN R1</span>
+            </div>
+          </div>
+
+          <div class="micro-details">
+            <div class="rel-io-box">
+              <div class="rel-io-title">Relaciones Directas</div>
+              <div class="rel-io-line"><b class="out">──► ENVÍA [2]:</b> Tráfico cifrado UDP 51820 hacia <code>C2-VPN (Servidor WireGuard)</code>.</div>
+            </div>
+            <div class="detail-block risk-block">
+              <div class="detail-heading">Riesgos MRI y Revisión R1</div>
+              <ul class="detail-list">
+                <li><span class="code-inline">MRI-0005</span> (P4×I4=16): Corte de Internet en Local 2 activa cola contingente.</li>
+                <li><span class="code-inline">EN REVISIÓN R1</span>: Límite máximo de tickets offline permitidos en Local 2.</li>
+              </ul>
+            </div>
+          </div>
+        </article>
+
+        <!-- C1-ADM -->
+        <article class="comp-card" id="C1-ADM" data-team="EQ1" data-minver="1">
+          <div class="comp-top">
+            <span class="comp-id-tag">C1-ADMIN · Gestión</span>
+            <span class="comp-team-tag">EQ1: AUT-0001 / 0007</span>
+          </div>
+          <div class="comp-title">Consola Administradora y Q.F.</div>
+          <div class="comp-short-sub">[Catálogo, Compras, Reportes y POE]</div>
+
+          <div class="mid-details">
+            <div class="comp-macro-role">Interfaz web autorizada para abastecimiento, turnos, reportes gerenciales y control sanitario POE.</div>
+            <div class="macro-summary-pills">
+              <span class="m-pill edu">EDU-0005..0013</span>
+              <span class="m-pill rnf">RNF-0004 / RNF-0007</span>
+              <span class="m-pill risk">MRI-0009</span>
+            </div>
+          </div>
+
+          <div class="micro-details">
+            <div class="rel-io-box">
+              <div class="rel-io-title">Relaciones Directas</div>
+              <div class="rel-io-line"><b class="out">──► ENVÍA [3]:</b> Gestión autorizada hacia <code>C2-GW (Controlador Web)</code>.</div>
+            </div>
+            <div class="detail-block">
+              <div class="detail-heading">Requisitos RF y RNF</div>
+              <ul class="detail-list">
+                <li><span class="code-inline">RNF-0004 / RNF-0007</span>: Supervisión multidispositivo y visión general del negocio.</li>
+              </ul>
+            </div>
+          </div>
+        </article>
+
+        <!-- C1-OFF -->
+        <article class="comp-card" id="C1-OFF" data-team="EQ1" data-minver="2">
+          <div class="comp-top">
+            <span class="comp-id-tag">C1-OFFLINE · Resiliencia</span>
+            <span class="comp-team-tag">EQ1: AUT-0001 / 0007</span>
+          </div>
+          <div class="comp-title">Cola Contingente Offline</div>
+          <div class="comp-short-sub">[Sincronización Idempotente UUID]</div>
+
+          <div class="mid-details">
+            <div class="comp-macro-role">Retiene ventas temporalmente en el navegador ante microcortes de red y re-sincroniza al reconectar.</div>
+            <div class="macro-summary-pills">
+              <span class="m-pill edu">EDU-0004 · ESP-0002</span>
+              <span class="m-pill rnf">RNF-0001 / RNF-0002</span>
+              <span class="m-pill risk">MRI-0005 / MRI-0008</span>
+              <span class="m-pill rev">REVISIÓN R1</span>
+            </div>
+          </div>
+
+          <div class="micro-details">
+            <div class="rel-io-box">
+              <div class="rel-io-title">Relaciones Directas</div>
+              <div class="rel-io-line"><b class="out">──► ENVÍA [4]:</b> Lote de sincronización hacia <code>C2-GW</code> y persiste en <code>C4-IDB</code>.</div>
+            </div>
+          </div>
+        </article>
+      </div>
+    </section>
+
+    <!-- ================================================================= -->
+    <!-- CAPA 2: SEGURIDAD, RED PRIVADA VPN Y CONTROL DE ACCESOS           -->
+    <!-- ================================================================= -->
+    <section class="layer-band l2" data-layer="2">
+      <div class="layer-header">
+        <div class="layer-title-wrap">
+          <span class="layer-num">CAPA 2</span>
+          <span class="layer-name">Seguridad Perimetral, Túnel VPN y Control de Accesos RBAC (EDU-0006 · RNF-0005, RNF-0006)</span>
+        </div>
+        <span class="layer-team-badge">EQUIPO 4: AUT-0002 (Gabriela) · AUT-0006 (Jeremy)</span>
+      </div>
+
+      <div class="layer-grid">
+        <!-- C2-VPN -->
+        <article class="comp-card" id="C2-VPN" data-team="EQ4" data-minver="2">
+          <div class="comp-top">
+            <span class="comp-id-tag">C2-VPN · Figura 3</span>
+            <span class="comp-team-tag">EQ4: AUT-0002 / 0006</span>
+          </div>
+          <div class="comp-title">Servidor WireGuard VPN</div>
+          <div class="comp-short-sub">[Túnel Cifrado UDP 51820]</div>
+
+          <div class="mid-details">
+            <div class="comp-macro-role">Conecta de forma privada al Local 2 con el servidor del Local 1 sin abrir PostgreSQL a Internet.</div>
+            <div class="macro-summary-pills">
+              <span class="m-pill edu">Opción 2 (Figura 3)</span>
+              <span class="m-pill rnf">RNF-0004 / RNF-0006</span>
+              <span class="m-pill risk">MRI-0005 / MRI-0014</span>
+              <span class="m-pill rev">REVISIÓN R2</span>
+            </div>
+          </div>
+
+          <div class="micro-details">
+            <div class="detail-block review-block">
+              <div class="detail-heading">Punto en Revisión R2</div>
+              <ul class="detail-list">
+                <li><span class="code-inline">REVISIÓN R2</span>: Validar IP pública vs CG-NAT del proveedor de Internet en Local 1.</li>
+              </ul>
+            </div>
+          </div>
+        </article>
+
+        <!-- C2-GW -->
+        <article class="comp-card" id="C2-GW" data-team="EQ4" data-minver="1">
+          <div class="comp-top">
+            <span class="comp-id-tag">C2-GW · Proxy TLS</span>
+            <span class="comp-team-tag">EQ4: AUT-0002 / 0006</span>
+          </div>
+          <div class="comp-title">Controlador Web / API Gateway</div>
+          <div class="comp-short-sub">[Entrada Única HTTPS y Esquemas]</div>
+
+          <div class="mid-details">
+            <div class="comp-macro-role">Recibe peticiones de Local 1 (LAN) y Local 2 (VPN), valida tokens y controla llaves de idempotencia.</div>
+            <div class="macro-summary-pills">
+              <span class="m-pill edu">Frontera HTTP</span>
+              <span class="m-pill rnf">RNF-0001 / RNF-0006</span>
+              <span class="m-pill risk">MRI-0003 / MRI-0014</span>
+            </div>
+          </div>
+
+          <div class="micro-details">
+            <div class="rel-io-box">
+              <div class="rel-io-title">Relaciones Directas</div>
+              <div class="rel-io-line"><b class="in">◀── RECIBE [1, 3, 4, 5]:</b> Tráfico de Capa 1 y VPN; delega autorización a <code>C2-RBAC [6]</code>.</div>
+            </div>
+          </div>
+        </article>
+
+        <!-- C2-RBAC -->
+        <article class="comp-card" id="C2-RBAC" data-team="EQ4" data-minver="3">
+          <div class="comp-top">
+            <span class="comp-id-tag">C2-RBAC · EDU-0006</span>
+            <span class="comp-team-tag">EQ4: AUT-0002 / 0006</span>
+          </div>
+          <div class="comp-title">Usuarios, Roles y Accesos</div>
+          <div class="comp-short-sub">[EDU-0006 · Control de Permisos]</div>
+
+          <div class="mid-details">
+            <div class="comp-macro-role">Verifica credenciales (bcrypt), caducidad de sesión (15 min) y matriz rol_permiso (Cajero vs Admin).</div>
+            <div class="macro-summary-pills">
+              <span class="m-pill edu">EDU-0006 · ILA-0001 · ESP-0007</span>
+              <span class="m-pill rnf">RNF-0005 / RNF-0006</span>
+              <span class="m-pill risk">MRI-0014 / MRI-0015</span>
+            </div>
+          </div>
+
+          <div class="micro-details">
+            <div class="rel-io-box">
+              <div class="rel-io-title">Relaciones Directas (PDF 11-EDU)</div>
+              <div class="rel-io-line"><b class="out">──► CONTROLA PERMISOS [7, 8]:</b> Autoriza operaciones en <code>C3-VEN (Ventas)</code> y <code>C3-COM (Compras)</code>.</div>
+            </div>
+          </div>
+        </article>
+
+        <!-- C2-AUD -->
+        <article class="comp-card" id="C2-AUD" data-team="EQ4" data-minver="3">
+          <div class="comp-top">
+            <span class="comp-id-tag">C2-AUDIT · Forense</span>
+            <span class="comp-team-tag">EQ4: AUT-0002 / 0006</span>
+          </div>
+          <div class="comp-title">Interceptor de Auditoría</div>
+          <div class="comp-short-sub">[Trazabilidad Antes / Después]</div>
+
+          <div class="mid-details">
+            <div class="comp-macro-role">Registra automáticamente quién, cuándo y desde qué sucursal ejecutó cada cambio crítico.</div>
+            <div class="macro-summary-pills">
+              <span class="m-pill edu">ESP-0007 (Auditoría)</span>
+              <span class="m-pill rnf">RNF-0005 / RNF-0008</span>
+              <span class="m-pill risk">MRI-0014</span>
+            </div>
+          </div>
+
+          <div class="micro-details">
+            <div class="rel-io-box">
+              <div class="rel-io-title">Relaciones Directas</div>
+              <div class="rel-io-line"><b class="out">──► ESCRIBE [19]:</b> Inserción append-only en <code>C4-BIT (bitacora_auditoria)</code>.</div>
+            </div>
+          </div>
+        </article>
+      </div>
+    </section>
+
+    <!-- ================================================================= -->
+    <!-- CAPA 3: DOMINIO Y LÓGICA DE NEGOCIO (MONOLITO MODULAR)            -->
+    <!-- ================================================================= -->
+    <section class="layer-band l3" data-layer="3">
+      <div class="layer-header">
+        <div class="layer-title-wrap">
+          <span class="layer-num">CAPA 3</span>
+          <span class="layer-name">Dominio y Lógica de Negocio — Monolito Modular Conectado (11 EDU · Figuras 4 y 5)</span>
+        </div>
+        <span class="layer-team-badge">EQUIPO 2: AUT-0005 (Ronald) · AUT-0004 (Sebastian)</span>
+      </div>
+
+      <div class="layer-grid">
+        <!-- FILA SUPERIOR CAPA 3: CATÁLOGO -> ABASTECIMIENTO -> INVENTARIO -->
+        <!-- C3-CAT -->
+        <article class="comp-card" id="C3-CAT" data-team="EQ2" data-minver="1">
+          <div class="comp-top">
+            <span class="comp-id-tag">C3-CAT · EDU-0005 / 0008</span>
+            <span class="comp-team-tag">EQ2: AUT-0005 / 0004</span>
+          </div>
+          <div class="comp-title">Catálogo y Medicamentos</div>
+          <div class="comp-short-sub">[Presentaciones y Factor Conversión]</div>
+
+          <div class="mid-details">
+            <div class="comp-macro-role">Gestiona Productos Comerciales (caja/blíster/unidad) y Ficha Sanitaria de Medicamentos (DCI, receta).</div>
+            <div class="macro-summary-pills">
+              <span class="m-pill edu">EDU-0005 · EDU-0008</span>
+              <span class="m-pill edu">ILA-0004 · ILA-0009</span>
+              <span class="m-pill rnf">RNF-0003 / RNF-0008</span>
+              <span class="m-pill risk">MRI-0001 / MRI-0016</span>
+              <span class="m-pill rev">REVISIÓN R5</span>
+            </div>
+          </div>
+
+          <div class="micro-details">
+            <div class="rel-io-box">
+              <div class="rel-io-title">Relaciones Funcionales (PDF 11-EDU y Fig. 5)</div>
+              <div class="rel-io-line"><b class="out">──► PROPORCIONA [10, 11]:</b> Datos de productos a <code>C3-COM (Compras)</code>, medicamentos/productos a <code>C3-INV (Inventario)</code> y factor de conversión a <code>C3-VEN (Ventas)</code>.</div>
+            </div>
+            <div class="detail-block">
+              <div class="detail-heading">Tablas BDD_0001</div>
+              <ul class="detail-list">
+                <li><span class="code-inline">producto, presentacion_producto, medicamento, principio_activo</span>.</li>
+              </ul>
+            </div>
+          </div>
+        </article>
+
+        <!-- C3-COM -->
+        <article class="comp-card" id="C3-COM" data-team="EQ2" data-minver="1">
+          <div class="comp-top">
+            <span class="comp-id-tag">C3-COM · EDU-0007 / 0009</span>
+            <span class="comp-team-tag">EQ2: AUT-0005 / 0004</span>
+          </div>
+          <div class="comp-title">Compras y Proveedores</div>
+          <div class="comp-short-sub">[Recepción Confirmada por Lote]</div>
+
+          <div class="mid-details">
+            <div class="comp-macro-role">Califica droguerías (RUC), registra órdenes de compra y valida lote y vencimiento al recibir mercadería.</div>
+            <div class="macro-summary-pills">
+              <span class="m-pill edu">EDU-0007 · EDU-0009</span>
+              <span class="m-pill edu">ILA-0005 · ILA-0006</span>
+              <span class="m-pill rnf">RNF-0005 / RNF-0008</span>
+              <span class="m-pill risk">MRI-0001 / MRI-0016</span>
+            </div>
+          </div>
+
+          <div class="micro-details">
+            <div class="rel-io-box">
+              <div class="rel-io-title">Relaciones Funcionales (PDF 11-EDU y Fig. 5)</div>
+              <div class="rel-io-line"><b class="in">◀── RECIBE [11]:</b> Datos de productos desde <code>C3-CAT</code>.</div>
+              <div class="rel-io-line"><b class="out">──► INCREMENTA STOCK [12]:</b> por lote en <code>C3-INV</code> y envía controles a <code>C3-REP [17]</code>.</div>
+            </div>
+          </div>
+        </article>
+
+        <!-- C3-INV -->
+        <article class="comp-card" id="C3-INV" data-team="EQ2" data-minver="1">
+          <div class="comp-top">
+            <span class="comp-id-tag">C3-INV · EDU-0002 (Núcleo)</span>
+            <span class="comp-team-tag">EQ2: AUT-0005 / 0004</span>
+          </div>
+          <div class="comp-title">Inventario por Lotes (FEFO)</div>
+          <div class="comp-short-sub">[Stock Unidad Base y Vencimientos]</div>
+
+          <div class="mid-details">
+            <div class="comp-macro-role">Núcleo del sistema: controla stock en unidad base por lote, prioriza FEFO y bloquea lotes vencidos (DES-0002).</div>
+            <div class="macro-summary-pills">
+              <span class="m-pill edu">EDU-0002 · ILA-0020 · DES-0002</span>
+              <span class="m-pill rnf">RNF-0007 / RNF-0008</span>
+              <span class="m-pill risk">MRI-0006 / MRI-0008</span>
+            </div>
+          </div>
+
+          <div class="micro-details">
+            <div class="rel-io-box">
+              <div class="rel-io-title">Relaciones Funcionales (Núcleo PDF 11-EDU)</div>
+              <div class="rel-io-line"><b class="in">◀── RECIBE [12, 13]:</b> Incremento por compra (<code>C3-COM</code>) y descuento por venta (<code>C3-VEN</code>).</div>
+              <div class="rel-io-line"><b class="out">──► PROPORCIONA [15, 18]:</b> Existencias y alertas a <code>C3-REP</code> y persiste en <code>C4-PG</code>.</div>
+            </div>
+          </div>
+        </article>
+
+        <!-- FILA INFERIOR CAPA 3: VENTAS -> CAJA Y TURNOS -> REPORTES Y POE -->
+        <!-- C3-VEN -->
+        <article class="comp-card" id="C3-VEN" data-team="EQ2" data-minver="1">
+          <div class="comp-top">
+            <span class="comp-id-tag">C3-VEN · EDU-0004 (DES-0001)</span>
+            <span class="comp-team-tag">EQ2: AUT-0005 / 0004</span>
+          </div>
+          <div class="comp-title">Motor de Ventas POS</div>
+          <div class="comp-short-sub">[Convierte Unidad y Descuenta Lote]</div>
+
+          <div class="mid-details">
+            <div class="comp-macro-role">Convierte presentación a unidad base (Fig. 5), valida lote FEFO activo, registra pago y procesa anulaciones.</div>
+            <div class="macro-summary-pills">
+              <span class="m-pill edu">EDU-0004 · ILA-0002 · DES-0001</span>
+              <span class="m-pill rnf">RNF-0001 / RNF-0003 / RNF-0008</span>
+              <span class="m-pill risk">MRI-0002 / MRI-0008</span>
+              <span class="m-pill rev">REVISIÓN R4</span>
+            </div>
+          </div>
+
+          <div class="micro-details">
+            <div class="rel-io-box">
+              <div class="rel-io-title">Relaciones Funcionales (PDF 11-EDU y Fig. 5)</div>
+              <div class="rel-io-line"><b class="out">──► DESCUENTA STOCK [13]:</b> en <code>C3-INV</code> | <b class="out">──► REGISTRA POR TURNO [14]:</b> en <code>C3-CAJ</code>.</div>
+            </div>
+          </div>
+        </article>
+
+        <!-- C3-CAJ -->
+        <article class="comp-card" id="C3-CAJ" data-team="EQ2" data-minver="1">
+          <div class="comp-top">
+            <span class="comp-id-tag">C3-CAJ · EDU-0011 / 0013</span>
+            <span class="comp-team-tag">EQ2: AUT-0005 / 0004</span>
+          </div>
+          <div class="comp-title">Control de Caja y Turnos</div>
+          <div class="comp-short-sub">[Apertura, Horarios y Arqueo]</div>
+
+          <div class="mid-details">
+            <div class="comp-macro-role">Planifica turnos de cajeros (EDU-0013), abre sesión con monto inicial y ejecuta cuadre al cierre (EDU-0011).</div>
+            <div class="macro-summary-pills">
+              <span class="m-pill edu">EDU-0011 · EDU-0013</span>
+              <span class="m-pill edu">ILA-0007 · ILA-0008</span>
+              <span class="m-pill rnf">RNF-0005 / RNF-0008</span>
+              <span class="m-pill risk">MRI-0011 / MRI-0015</span>
+            </div>
+          </div>
+
+          <div class="micro-details">
+            <div class="rel-io-box">
+              <div class="rel-io-title">Relaciones Funcionales</div>
+              <div class="rel-io-line"><b class="in">◀── RECIBE [14]:</b> Ventas por turno desde <code>C3-VEN</code> y persiste arqueo en <code>C4-PG [18]</code>.</div>
+            </div>
+          </div>
+        </article>
+
+        <!-- C3-REP -->
+        <article class="comp-card" id="C3-REP" data-team="EQ2" data-minver="1">
+          <div class="comp-top">
+            <span class="comp-id-tag">C3-REP · EDU-0010 / 0012</span>
+            <span class="comp-team-tag">EQ2: AUT-0005 / 0004</span>
+          </div>
+          <div class="comp-title">Reportes y Cumplimiento POE</div>
+          <div class="comp-short-sub">[Indicadores y Control DIGEMID]</div>
+
+          <div class="mid-details">
+            <div class="comp-macro-role">Consolida reportes de existencias, ventas y compras (EDU-0010) y actas normativas POE (EDU-0012).</div>
+            <div class="macro-summary-pills">
+              <span class="m-pill edu">EDU-0010 · EDU-0012</span>
+              <span class="m-pill edu">ILA-0003 · ILA-0021 · ILA-0022</span>
+              <span class="m-pill rnf">RNF-0007 / RNF-0008</span>
+              <span class="m-pill rev">REVISIÓN R6</span>
+            </div>
+          </div>
+
+          <div class="micro-details">
+            <div class="rel-io-box">
+              <div class="rel-io-title">Relaciones Funcionales</div>
+              <div class="rel-io-line"><b class="in">◀── RECIBE [15, 16, 17]:</b> Existencias de <code>C3-INV</code>, Ventas de <code>C3-VEN</code> y Compras de <code>C3-COM</code>.</div>
+            </div>
+          </div>
+        </article>
+      </div>
+    </section>
+
+    <!-- ================================================================= -->
+    <!-- CAPA 4: PERSISTENCIA TRANSACCIONAL Y AUDITORÍA (BDD_0001)         -->
+    <!-- ================================================================= -->
+    <section class="layer-band l4" data-layer="4">
+      <div class="layer-header">
+        <div class="layer-title-wrap">
+          <span class="layer-num">CAPA 4</span>
+          <span class="layer-name">Servicios Transaccionales ACID y Base de Datos Central (PostgreSQL 16 · BDD_0001)</span>
+        </div>
+        <span class="layer-team-badge">EQUIPO 3: AUT-0003 (Joel) · AUT-0008 (Cristian)</span>
+      </div>
+
+      <div class="layer-grid">
+        <!-- C4-PG -->
+        <article class="comp-card" id="C4-PG" data-team="EQ3" data-minver="1">
+          <div class="comp-top">
+            <span class="comp-id-tag">C4-PG · BDD_0001</span>
+            <span class="comp-team-tag">EQ3: AUT-0003 / 0008</span>
+          </div>
+          <div class="comp-title">BD Central marifarma_gestion_db</div>
+          <div class="comp-short-sub">[PostgreSQL 16 · Transacciones ACID]</div>
+
+          <div class="mid-details">
+            <div class="comp-macro-role">Coordina transacciones atómicas SELECT FOR UPDATE sobre lotes y persiste las tablas normalizadas en Local 1.</div>
+            <div class="macro-summary-pills">
+              <span class="m-pill edu">BDD_0001 (PostgreSQL 16)</span>
+              <span class="m-pill rnf">RNF-0008 (ACID)</span>
+              <span class="m-pill risk">MRI-0003 / MRI-0008</span>
+            </div>
+          </div>
+
+          <div class="micro-details">
+            <div class="detail-block">
+              <div class="detail-heading">Tablas Nucleares</div>
+              <ul class="detail-list">
+                <li><span class="code-inline">producto, presentacion_producto, medicamento, lote_producto, movimiento_inventario, venta, compra, sesion_caja</span>.</li>
+              </ul>
+            </div>
+          </div>
+        </article>
+
+        <!-- C4-BIT -->
+        <article class="comp-card" id="C4-BIT" data-team="EQ3" data-minver="3">
+          <div class="comp-top">
+            <span class="comp-id-tag">C4-BIT · Inmutable</span>
+            <span class="comp-team-tag">EQ3: AUT-0003 / 0008</span>
+          </div>
+          <div class="comp-title">Bitácora Forense de Auditoría</div>
+          <div class="comp-short-sub">[bitacora_auditoria · Append-Only]</div>
+
+          <div class="mid-details">
+            <div class="comp-macro-role">Tabla protegida sin permisos de borrado físico; conserva historial de sesiones, roles, ventas y ajustes.</div>
+            <div class="macro-summary-pills">
+              <span class="m-pill edu">ESP-0007</span>
+              <span class="m-pill rnf">RNF-0005 / RNF-0008</span>
+              <span class="m-pill risk">MRI-0014</span>
+            </div>
+          </div>
+
+          <div class="micro-details">
+            <div class="detail-block">
+              <div class="detail-heading">Regla de Integridad</div>
+              <ul class="detail-list">
+                <li>Prohibición estricta de <span class="code-inline">DELETE</span>; toda baja es lógica (<span class="code-inline">estado = 'INACTIVO'</span>).</li>
+              </ul>
+            </div>
+          </div>
+        </article>
+
+        <!-- C4-IDX -->
+        <article class="comp-card" id="C4-IDX" data-team="EQ3" data-minver="3">
+          <div class="comp-top">
+            <span class="comp-id-tag">C4-IDX · Rendimiento</span>
+            <span class="comp-team-tag">EQ3: AUT-0003 / 0008</span>
+          </div>
+          <div class="comp-title">Índices Compuestos FEFO</div>
+          <div class="comp-short-sub">[Optimización B-Tree en 8GB RAM]</div>
+
+          <div class="mid-details">
+            <div class="comp-macro-role">Acelera el ordenamiento por fecha de vencimiento y las consultas de reportes sin saturar memoria.</div>
+            <div class="macro-summary-pills">
+              <span class="m-pill edu">EDU-0002 · EDU-0010</span>
+              <span class="m-pill rnf">RNF-0001 / RNF-0007</span>
+              <span class="m-pill risk">MRI-0003</span>
+            </div>
+          </div>
+
+          <div class="micro-details">
+            <div class="detail-block">
+              <div class="detail-heading">Índice Clave</div>
+              <ul class="detail-list">
+                <li><span class="code-inline">idx_lote_fefo (id_producto, estado_lote, fecha_vencimiento ASC)</span>.</li>
+              </ul>
+            </div>
+          </div>
+        </article>
+
+        <!-- C4-IDB -->
+        <article class="comp-card" id="C4-IDB" data-team="EQ3" data-minver="2">
+          <div class="comp-top">
+            <span class="comp-id-tag">C4-IDB · Local</span>
+            <span class="comp-team-tag">EQ3: AUT-0003 / 0008</span>
+          </div>
+          <div class="comp-title">Almacén Contingente IndexedDB</div>
+          <div class="comp-short-sub">[Caché y Cola Local en Navegador]</div>
+
+          <div class="mid-details">
+            <div class="comp-macro-role">Persiste temporalmente en disco del cliente las ventas firmadas con UUID durante microcortes WAN/VPN.</div>
+            <div class="macro-summary-pills">
+              <span class="m-pill edu">Contingencia POS</span>
+              <span class="m-pill rnf">RNF-0001 / RNF-0002</span>
+              <span class="m-pill risk">MRI-0005</span>
+            </div>
+          </div>
+
+          <div class="micro-details">
+            <div class="detail-block">
+              <div class="detail-heading">Reconciliación</div>
+              <ul class="detail-list">
+                <li>Sincroniza automáticamente al restablecer el túnel WireGuard con Local 1.</li>
+              </ul>
+            </div>
+          </div>
+        </article>
+      </div>
+    </section>
+
+    <!-- ================================================================= -->
+    <!-- CAPA 5: INFRAESTRUCTURA FÍSICA, HARDWARE Y RESPALDO               -->
+    <!-- ================================================================= -->
+    <section class="layer-band l5" data-layer="5">
+      <div class="layer-header">
+        <div class="layer-title-wrap">
+          <span class="layer-num">CAPA 5</span>
+          <span class="layer-name">Infraestructura Física Confirmada y Respaldo Automatizado (Figura 3 · RNF-0002, RNF-0004)</span>
+        </div>
+        <span class="layer-team-badge">EQUIPO 3: AUT-0003 (Joel) · AUT-0008 (Cristian)</span>
+      </div>
+
+      <div class="layer-grid">
+        <!-- C5-SRV -->
+        <article class="comp-card" id="C5-SRV" data-team="EQ3" data-minver="1">
+          <div class="comp-top">
+            <span class="comp-id-tag">C5-HOST-L1 · Confirmado</span>
+            <span class="comp-team-tag">EQ3: AUT-0003 / 0008</span>
+          </div>
+          <div class="comp-title">PC Servidor + Caja Local 1</div>
+          <div class="comp-short-sub">[ThinkCentre i3-12100 · 8GB · 256GB]</div>
+
+          <div class="mid-details">
+            <div class="comp-macro-role">Equipo anfitrión en Local 1: aloja monolito Innofarma, PostgreSQL 16, servidor WireGuard y navegador Caja 1.</div>
+            <div class="macro-summary-pills">
+              <span class="m-pill edu">Sede Principal Local 1</span>
+              <span class="m-pill rnf">RNF-0001 / RNF-0004</span>
+              <span class="m-pill risk">MRI-0003 / MRI-0004</span>
+            </div>
+          </div>
+
+          <div class="micro-details">
+            <div class="detail-block strength-block">
+              <div class="detail-heading">Presupuesto de Memoria (8 GB RAM)</div>
+              <ul class="detail-list">
+                <li>SO (~2.2 GB) + PostgreSQL (~768 MB) + Backend (~512 MB) + Navegador (~900 MB) = ~4.4 GB usados.</li>
+              </ul>
+            </div>
+          </div>
+        </article>
+
+        <!-- C5-CLI -->
+        <article class="comp-card" id="C5-CLI" data-team="EQ3" data-minver="2">
+          <div class="comp-top">
+            <span class="comp-id-tag">C5-CLIENT-L2 · Confirmado</span>
+            <span class="comp-team-tag">EQ3: AUT-0003 / 0008</span>
+          </div>
+          <div class="comp-title">PC Cliente Remoto Local 2</div>
+          <div class="comp-short-sub">[ThinkCentre i3-12100 · 8GB · 256GB]</div>
+
+          <div class="mid-details">
+            <div class="comp-macro-role">Segunda PC en Sucursal 2: ejecuta cliente WireGuard VPN y navegador web sin duplicar base de datos.</div>
+            <div class="macro-summary-pills">
+              <span class="m-pill edu">Segunda Sucursal Local 2</span>
+              <span class="m-pill rnf">RNF-0004 / RNF-0006</span>
+              <span class="m-pill risk">MRI-0005</span>
+            </div>
+          </div>
+
+          <div class="micro-details">
+            <div class="detail-block strength-block">
+              <div class="detail-heading">Fortaleza Económica</div>
+              <ul class="detail-list">
+                <li>Aprovecha el hardware confirmado de Marifarma con costo mensual $0 en servidores cloud.</li>
+              </ul>
+            </div>
+          </div>
+        </article>
+
+        <!-- C5-UPS -->
+        <article class="comp-card" id="C5-UPS" data-team="EQ3" data-minver="1">
+          <div class="comp-top">
+            <span class="comp-id-tag">C5-UPS · Protección</span>
+            <span class="comp-team-tag">EQ3: AUT-0003 / 0008</span>
+          </div>
+          <div class="comp-title">UPS 1000VA y Router LAN</div>
+          <div class="comp-short-sub">[Continuidad Eléctrica 15-20 min]</div>
+
+          <div class="mid-details">
+            <div class="comp-macro-role">Protege al servidor del Local 1 y al router ante apagones para evitar corrupción de transacciones en disco.</div>
+            <div class="macro-summary-pills">
+              <span class="m-pill edu">Hardware Confirmado</span>
+              <span class="m-pill rnf">RNF-0001 / RNF-0002</span>
+              <span class="m-pill risk">MRI-0004</span>
+            </div>
+          </div>
+
+          <div class="micro-details">
+            <div class="detail-block risk-block">
+              <div class="detail-heading">Riesgo MRI-0004</div>
+              <ul class="detail-list">
+                <li>Corte eléctrico mayor a 20 min exige apagado ordenado automático del servidor.</li>
+              </ul>
+            </div>
+          </div>
+        </article>
+
+        <!-- C5-BAK -->
+        <article class="comp-card" id="C5-BAK" data-team="EQ3" data-minver="3">
+          <div class="comp-top">
+            <span class="comp-id-tag">C5-BACKUP · RNF-0002</span>
+            <span class="comp-team-tag">EQ3: AUT-0003 / 0008</span>
+          </div>
+          <div class="comp-title">Respaldo Automático 24h</div>
+          <div class="comp-short-sub">[pg_dump Cifrado · RTO ≤ 10 min]</div>
+
+          <div class="mid-details">
+            <div class="comp-macro-role">Ejecuta copia diaria comprimida de marifarma_gestion_db en disco local y unidad externa USB/Nube.</div>
+            <div class="macro-summary-pills">
+              <span class="m-pill edu">Respaldo y Recuperación</span>
+              <span class="m-pill rnf">RNF-0002 (Cada 24h)</span>
+              <span class="m-pill risk">MRI-0004</span>
+              <span class="m-pill rev">REVISIÓN R3</span>
+            </div>
+          </div>
+
+          <div class="micro-details">
+            <div class="detail-block review-block">
+              <div class="detail-heading">Punto en Revisión R3</div>
+              <ul class="detail-list">
+                <li><span class="code-inline">REVISIÓN R3</span>: Confirmar hora exacta del respaldo automático tras el cierre diario.</li>
+              </ul>
+            </div>
+          </div>
+        </article>
+      </div>
+    </section>
+
+  </div>
+</div>
+
+<script>
+  const viewport = document.getElementById('viewport');
+  const canvas = document.getElementById('canvas');
+  const zoomIndicator = document.getElementById('zoomIndicator');
+  const btnSkeleton = document.getElementById('btnSkeleton');
+  const btnMedium = document.getElementById('btnMedium');
+  const btnMicro = document.getElementById('btnMicro');
+  const relationsLayer = document.getElementById('relations-layer');
+
+  let scale = 0.52;
+  let panX = 48;
+  let panY = 14;
+  let isPanning = false;
+  let startX = 0, startY = 0;
+  let lockedCardId = null;
+  let hoveredCardId = null;
+  let activeSemanticCategory = 'ALL';
+
+  function toggleSemPopover() {
+    document.getElementById('semPopover').classList.toggle('open');
+  }
+
+  // MAPA DE CATEGORÍAS SEMÁNTICAS A MÓDULOS Y FLECHAS RELACIONADAS
+  const SEMANTIC_MAP = {
+    REL_INTRA: {
+      cards: ['C3-CAT', 'C3-COM', 'C3-INV', 'C3-VEN', 'C3-CAJ', 'C3-REP'],
+      relTypes: ['intra']
+    },
+    REL_INTER: {
+      cards: ['C1-POS1', 'C1-POS2', 'C1-ADM', 'C1-OFF', 'C2-VPN', 'C2-GW', 'C2-RBAC', 'C2-AUD', 'C3-CAT', 'C3-COM', 'C5-CLI'],
+      relTypes: ['inter']
+    },
+    REL_DATA: {
+      cards: ['C3-VEN', 'C3-CAJ', 'C3-REP', 'C3-INV', 'C4-PG', 'C4-BIT', 'C4-IDX', 'C4-IDB', 'C5-SRV', 'C5-UPS', 'C5-BAK'],
+      relTypes: ['data']
+    },
+    DOM_UI: {
+      cards: ['C1-POS1', 'C1-POS2', 'C1-ADM', 'C1-OFF', 'C2-GW', 'C2-VPN'],
+      relIds: [1, 2, 3, 4]
+    },
+    DOM_SEC: {
+      cards: ['C2-VPN', 'C2-GW', 'C2-RBAC', 'C2-AUD', 'C1-POS2', 'C3-COM', 'C3-VEN', 'C4-BIT'],
+      relIds: [2, 5, 6, 7, 8, 9, 19, 24]
+    },
+    DOM_CORE: {
+      cards: ['C3-CAT', 'C3-COM', 'C3-INV', 'C3-VEN', 'C3-CAJ', 'C3-REP'],
+      relTypes: ['intra']
+    },
+    DOM_DATA: {
+      cards: ['C4-PG', 'C4-BIT', 'C4-IDX', 'C4-IDB', 'C3-INV', 'C3-VEN', 'C3-CAJ', 'C3-REP', 'C5-SRV', 'C5-BAK'],
+      relIds: [18, 19, 20, 21, 23]
+    },
+    DOM_HW: {
+      cards: ['C5-SRV', 'C5-CLI', 'C5-UPS', 'C5-BAK', 'C4-PG', 'C2-VPN'],
+      relIds: [21, 22, 23, 24]
+    },
+    STATE_RISK: {
+      cards: ['C1-POS2', 'C1-OFF', 'C2-VPN', 'C3-INV', 'C3-VEN', 'C4-PG', 'C5-SRV', 'C5-UPS'],
+      relIds: [2, 4, 13, 18, 21, 22, 24]
+    },
+    STATE_REV: {
+      cards: ['C1-POS2', 'C1-OFF', 'C2-VPN', 'C3-CAT', 'C3-VEN', 'C3-REP', 'C5-BAK'],
+      relIds: [2, 4, 10, 12, 13, 15, 23]
+    }
+  };
+
+  function applySemanticFilter(category) {
+    if (activeSemanticCategory === category && category !== 'ALL') {
+      category = 'ALL';
+    }
+    activeSemanticCategory = category;
+    lockedCardId = null;
+    hoveredCardId = null;
+
+    document.querySelectorAll('.sem-item').forEach(el => {
+      el.classList.toggle('active-sem', el.dataset.sem === category);
+    });
+
+    updateCardHighlights();
+  }
+  window.applySemanticFilter = applySemanticFilter;
+
+  window.addEventListener('message', (e) => {
+    if (e.data && e.data.type === 'SEMANTIC_FILTER') {
+      activeSemanticCategory = ''; // force apply
+      applySemanticFilter(e.data.category || 'ALL');
+    }
+  });
+
+  // UMBRALES DE LOS 3 NIVELES DE ZOOM SEMÁNTICO
+  const THRESHOLD_MEDIUM = 0.68;
+  const THRESHOLD_MICRO  = 0.90;
+
+  // RELACIONES ORTOGONALES POR CORREDORES LIMPIOS (CERO CRUCES SOBRE TEXTO)
+  // core: true = se muestra en la vista limpia por defecto (solo conecta vecinos adyacentes por corredores vacíos)
+  // core: false = saltos largos entre capas no adyacentes (se muestran al hacer hover/clic en la caja o en modo "Todas")
+  const RELATIONS = [
+    // Corredor Capa 1 -> Capa 2 (Vecinos verticales directos)
+    { id: 1, from: 'C1-POS1', to: 'C2-GW',   label: '1. HTTP LAN (<2s)',     type: 'inter', fromSide: 'bottom', toSide: 'top', core: true,  yRatio: 0.35 },
+    { id: 2, from: 'C1-POS2', to: 'C2-VPN',  label: '2. Túnel VPN 51820',    type: 'inter', fromSide: 'bottom', toSide: 'top', core: true,  yRatio: 0.65 },
+    { id: 3, from: 'C1-ADM',  to: 'C2-GW',   label: '3. Gestión Admin',      type: 'inter', fromSide: 'bottom', toSide: 'top', core: true,  yRatio: 0.35 },
+    { id: 4, from: 'C1-OFF',  to: 'C2-AUD',  label: '4. Sync Idempotente',   type: 'inter', fromSide: 'bottom', toSide: 'top', core: true,  yRatio: 0.55 },
+
+    // Corredores Horizontales dentro de Capa 2
+    { id: 5, from: 'C2-VPN',  to: 'C2-GW',   label: '5. Red 10.8.0.x',       type: 'inter', fromSide: 'right',  toSide: 'left', core: true },
+    { id: 6, from: 'C2-GW',   to: 'C2-RBAC', label: '6. Valida Token',       type: 'inter', fromSide: 'right',  toSide: 'left', core: true },
+    { id: 9, from: 'C2-RBAC', to: 'C2-AUD',  label: '9. Traza Acceso',       type: 'inter', fromSide: 'right',  toSide: 'left', core: true },
+
+    // Corredor Capa 2 -> Capa 3
+    { id: 7, from: 'C2-GW',   to: 'C3-CAT',  label: '7. Consultas Catálogo', type: 'inter', fromSide: 'bottom', toSide: 'top', core: true,  yRatio: 0.45 },
+    { id: 8, from: 'C2-RBAC', to: 'C3-COM',  label: '8. Controla Permisos',  type: 'inter', fromSide: 'bottom', toSide: 'top', core: true,  yRatio: 0.45 },
+
+    // Corredores Internos de Capa 3 (Las relaciones entre Módulos EDU - Fig. 4, Fig. 5 y PDF 11-EDU)
+    { id: 10, from: 'C3-CAT', to: 'C3-COM',  label: '10. Datos productos',   type: 'intra', fromSide: 'right',  toSide: 'left', core: true },
+    { id: 11, from: 'C3-COM', to: 'C3-INV',  label: '11. Incrementa stock',  type: 'intra', fromSide: 'right',  toSide: 'left', core: true },
+    { id: 12, from: 'C3-CAT', to: 'C3-VEN',  label: '12. Factor conversión', type: 'intra', fromSide: 'bottom', toSide: 'top',  core: true,  yRatio: 0.50 },
+    { id: 13, from: 'C3-VEN', to: 'C3-INV',  label: '13. Descuenta stock FEFO', type: 'intra', fromSide: 'top', toSide: 'bottom', core: true, yRatio: 0.32 },
+    { id: 14, from: 'C3-VEN', to: 'C3-CAJ',  label: '14. Ventas por turno',  type: 'intra', fromSide: 'right',  toSide: 'left', core: true },
+    { id: 15, from: 'C3-INV', to: 'C3-REP',  label: '15. Existencias y POE', type: 'intra', fromSide: 'bottom', toSide: 'top',  core: true,  yRatio: 0.55 },
+    { id: 16, from: 'C3-CAJ', to: 'C3-REP',  label: '16. Datos arqueo/turno',type: 'intra', fromSide: 'right',  toSide: 'left', core: true },
+    { id: 17, from: 'C3-COM', to: 'C3-REP',  label: '17. Compras y prov.',   type: 'intra', fromSide: 'bottom', toSide: 'top',  core: false, yRatio: 0.68 },
+
+    // Corredor Capa 3 -> Capa 4 (Persistencia Transaccional ACID)
+    { id: 18, from: 'C3-VEN', to: 'C4-PG',   label: '18. Transacción ACID',  type: 'data',  fromSide: 'bottom', toSide: 'top',  core: true,  yRatio: 0.40 },
+    { id: 19, from: 'C3-CAJ', to: 'C4-BIT',  label: '19. Bitácora Inmutable',type: 'data',  fromSide: 'bottom', toSide: 'top',  core: true,  yRatio: 0.60 },
+    { id: 20, from: 'C3-REP', to: 'C4-IDX',  label: '20. Consulta B-Tree',   type: 'data',  fromSide: 'bottom', toSide: 'top',  core: true,  yRatio: 0.45 },
+
+    // Corredor Capa 4 -> Capa 5 (Infraestructura Física y Respaldo)
+    { id: 21, from: 'C4-PG',  to: 'C5-SRV',  label: '21. Alojada en Local 1',type: 'data',  fromSide: 'bottom', toSide: 'top',  core: true,  yRatio: 0.45 },
+    { id: 22, from: 'C5-UPS', to: 'C5-SRV',  label: '22. Protege Energía',   type: 'data',  fromSide: 'left',   toSide: 'right',core: true },
+    { id: 23, from: 'C4-IDX', to: 'C5-BAK',  label: '23. pg_dump 24h',       type: 'data',  fromSide: 'bottom', toSide: 'top',  core: true,  yRatio: 0.55 },
+
+    // Saltos largos por canal lateral externo (solo visibles al seleccionar o en modo "Todas")
+    { id: 24, from: 'C5-CLI', to: 'C2-VPN',  label: '24. Enlace Sucursal 2', type: 'inter', fromSide: 'left',   toSide: 'left', core: false, gutter: 'left' }
+  ];
+
+  function getAnchor(el, side) {
+    const cRect = canvas.getBoundingClientRect();
+    const r = el.getBoundingClientRect();
+    const x = (r.left - cRect.left) / scale;
+    const y = (r.top - cRect.top) / scale;
+    const w = r.width / scale;
+    const h = r.height / scale;
+
+    if (side === 'top')    return { x: x + w / 2, y: y };
+    if (side === 'bottom') return { x: x + w / 2, y: y + h };
+    if (side === 'left')   return { x: x,         y: y + h / 2 };
+    if (side === 'right')  return { x: x + w,     y: y + h / 2 };
+    return { x: x + w / 2, y: y + h / 2 };
+  }
+
+  function buildPath(p1, p2, rel) {
+    if (rel.gutter === 'left') {
+      const gx = 34;
+      return {
+        d: `M ${p1.x} ${p1.y} L ${gx} ${p1.y} L ${gx} ${p2.y} L ${p2.x} ${p2.y}`,
+        lx: gx + 54,
+        ly: (p1.y + p2.y) / 2
+      };
+    }
+    if ((rel.fromSide === 'right' && rel.toSide === 'left') || (rel.fromSide === 'left' && rel.toSide === 'right')) {
+      const midX = (p1.x + p2.x) / 2;
+      return {
+        d: `M ${p1.x} ${p1.y} L ${midX} ${p1.y} L ${midX} ${p2.y} L ${p2.x} ${p2.y}`,
+        lx: midX,
+        ly: (p1.y + p2.y) / 2 - 12
+      };
+    }
+    const ratio = rel.yRatio || 0.5;
+    const midY = p1.y + (p2.y - p1.y) * ratio;
+    const lx = (p1.x + p2.x) / 2;
+    return {
+      d: `M ${p1.x} ${p1.y} L ${p1.x} ${midY} L ${p2.x} ${midY} L ${p2.x} ${p2.y}`,
+      lx: lx,
+      ly: midY
+    };
+  }
+
+  function isRelInSemantic(rel, semRule) {
+    if (!semRule) return false;
+    if (semRule.relTypes && semRule.relTypes.includes(rel.type)) return true;
+    if (semRule.relIds && semRule.relIds.includes(rel.id)) return true;
+    return false;
+  }
+
+  function drawAllRelations() {
+    relationsLayer.innerHTML = '';
+    const relMode = document.getElementById('relFilterSelect').value;
+    const activeCard = lockedCardId || hoveredCardId;
+    const semRule = (!activeCard && activeSemanticCategory !== 'ALL') ? SEMANTIC_MAP[activeSemanticCategory] : null;
+
+    RELATIONS.forEach(rel => {
+      const fromEl = document.getElementById(rel.from);
+      const toEl = document.getElementById(rel.to);
+      if (!fromEl || !toEl) return;
+
+      const isConnected = activeCard && (rel.from === activeCard || rel.to === activeCard);
+      const isSemMatch = semRule && isRelInSemantic(rel, semRule);
+
+      if (!semRule) {
+        if (relMode === 'CORE' && !rel.core && !isConnected) return;
+        if (relMode === 'INTRA' && rel.type !== 'intra' && !isConnected) return;
+        if (relMode === 'HOVER' && !isConnected) return;
+      } else {
+        if (!rel.core && !isSemMatch) return;
+      }
+
+      const p1 = getAnchor(fromEl, rel.fromSide);
+      const p2 = getAnchor(toEl, rel.toSide);
+      const geom = buildPath(p1, p2, rel);
+
+      const g = document.createElementNS('http://www.w3.org/2000/svg', 'g');
+      g.setAttribute('class', 'rel-group');
+
+      if (activeCard) {
+        g.classList.add(isConnected ? 'active-rel' : 'dimmed');
+      } else if (semRule) {
+        g.classList.add(isSemMatch ? 'active-rel' : 'dimmed');
+      }
+
+      const path = document.createElementNS('http://www.w3.org/2000/svg', 'path');
+      path.setAttribute('d', geom.d);
+      path.setAttribute('class', `rel-path ${rel.type}`);
+      const markerId = (isConnected || isSemMatch) ? 'arrow-active' : `arrow-${rel.type}`;
+      path.setAttribute('marker-end', `url(#${markerId})`);
+      if (isConnected) {
+        path.style.stroke = (rel.from === activeCard) ? '#7c3aed' : '#047857';
+      }
+      g.appendChild(path);
+
+      const labelText = rel.label;
+      const bw = labelText.length * 6.5 + 16;
+      const bh = 20;
+
+      const rect = document.createElementNS('http://www.w3.org/2000/svg', 'rect');
+      rect.setAttribute('x', geom.lx - bw / 2);
+      rect.setAttribute('y', geom.ly - bh / 2);
+      rect.setAttribute('width', bw);
+      rect.setAttribute('height', bh);
+      rect.setAttribute('rx', 4);
+      rect.setAttribute('class', 'rel-label-bg');
+      g.appendChild(rect);
+
+      const text = document.createElementNS('http://www.w3.org/2000/svg', 'text');
+      text.setAttribute('x', geom.lx);
+      text.setAttribute('y', geom.ly + 4);
+      text.setAttribute('text-anchor', 'middle');
+      text.setAttribute('class', 'rel-label-text');
+      text.textContent = labelText;
+      g.appendChild(text);
+
+      relationsLayer.appendChild(g);
+    });
+  }
+
+  function updateCardHighlights() {
+    const activeCard = lockedCardId || hoveredCardId;
+    const allCards = document.querySelectorAll('.comp-card');
+    const semRule = (!activeCard && activeSemanticCategory !== 'ALL') ? SEMANTIC_MAP[activeSemanticCategory] : null;
+
+    if (!activeCard && !semRule) {
+      allCards.forEach(c => c.classList.remove('selected-card', 'neighbor-in', 'neighbor-out', 'dimmed'));
+      applyFilters(false);
+      drawAllRelations();
+      return;
+    }
+
+    if (semRule) {
+      const targetCards = new Set(semRule.cards || []);
+      allCards.forEach(c => {
+        c.classList.remove('selected-card', 'neighbor-in', 'neighbor-out', 'dimmed');
+        if (targetCards.has(c.id)) {
+          c.classList.add('selected-card');
+        } else {
+          c.classList.add('dimmed');
+        }
+      });
+      drawAllRelations();
+      return;
+    }
+
+    const incomingIds = new Set();
+    const outgoingIds = new Set();
+    RELATIONS.forEach(r => {
+      if (r.to === activeCard) incomingIds.add(r.from);
+      if (r.from === activeCard) outgoingIds.add(r.to);
+    });
+
+    allCards.forEach(c => {
+      c.classList.remove('selected-card', 'neighbor-in', 'neighbor-out', 'dimmed');
+      if (c.id === activeCard) c.classList.add('selected-card');
+      else if (incomingIds.has(c.id)) c.classList.add('neighbor-in');
+      else if (outgoingIds.has(c.id)) c.classList.add('neighbor-out');
+      else c.classList.add('dimmed');
+    });
+
+    drawAllRelations();
+  }
+
+  function resetSelection() {
+    lockedCardId = null;
+    hoveredCardId = null;
+    activeSemanticCategory = 'ALL';
+    document.querySelectorAll('.sem-item').forEach(el => el.classList.remove('active-sem'));
+    updateCardHighlights();
+  }
+
+  document.querySelectorAll('.comp-card').forEach(card => {
+    card.addEventListener('mouseenter', () => {
+      if (!lockedCardId) {
+        hoveredCardId = card.id;
+        updateCardHighlights();
+      }
+    });
+    card.addEventListener('mouseleave', () => {
+      if (!lockedCardId) {
+        hoveredCardId = null;
+        updateCardHighlights();
+      }
+    });
+    card.addEventListener('click', (e) => {
+      e.stopPropagation();
+      lockedCardId = (lockedCardId === card.id) ? null : card.id;
+      updateCardHighlights();
+    });
+  });
+
+  function getLodClass(s) {
+    if (s < THRESHOLD_MEDIUM) return 'lod-skeleton';
+    if (s < THRESHOLD_MICRO)  return 'lod-medium';
+    return 'lod-micro';
+  }
+
+  function updateTransform() {
+    canvas.style.transform = `translate(${panX}px, ${panY}px) scale(${scale})`;
+    const pct = Math.round(scale * 100);
+    const prevLod = canvas.dataset.lod || '';
+    const nextLod = getLodClass(scale);
+
+    canvas.classList.remove('lod-skeleton', 'lod-medium', 'lod-micro');
+    canvas.classList.add(nextLod);
+    canvas.dataset.lod = nextLod;
+
+    btnSkeleton.classList.toggle('active-mode', nextLod === 'lod-skeleton');
+    btnMedium.classList.toggle('active-mode', nextLod === 'lod-medium');
+    btnMicro.classList.toggle('active-mode', nextLod === 'lod-micro');
+
+    if (nextLod === 'lod-skeleton') {
+      zoomIndicator.textContent = `${pct}% · ESQUELETO`;
+      zoomIndicator.style.background = '#fef08a';
+    } else if (nextLod === 'lod-medium') {
+      zoomIndicator.textContent = `${pct}% · PÍLDORAS CR`;
+      zoomIndicator.style.background = '#bae6fd';
+    } else {
+      zoomIndicator.textContent = `${pct}% · DETALLE MICRO`;
+      zoomIndicator.style.background = '#bbf7d0';
+    }
+
+    if (prevLod !== nextLod) {
+      requestAnimationFrame(() => drawAllRelations());
+    }
+  }
+
+  function setSkeletonView() {
+    scale = 0.52; panX = 48; panY = 14;
+    updateTransform();
+    requestAnimationFrame(() => drawAllRelations());
+  }
+  function setMediumView() {
+    scale = 0.76; panX = 28; panY = 12;
+    updateTransform();
+    requestAnimationFrame(() => drawAllRelations());
+  }
+  function setMicroView() {
+    scale = 0.96; panX = 18; panY = 10;
+    updateTransform();
+    requestAnimationFrame(() => drawAllRelations());
+  }
+
+  viewport.addEventListener('mousedown', (e) => {
+    if (e.target.closest('.comp-card')) return;
+    isPanning = true;
+    viewport.classList.add('panning');
+    startX = e.clientX - panX;
+    startY = e.clientY - panY;
+  });
+  window.addEventListener('mousemove', (e) => {
+    if (!isPanning) return;
+    panX = e.clientX - startX;
+    panY = e.clientY - startY;
+    updateTransform();
+  });
+  window.addEventListener('mouseup', () => {
+    isPanning = false;
+    viewport.classList.remove('panning');
+  });
+
+  viewport.addEventListener('wheel', (e) => {
+    e.preventDefault();
+    const zoomFactor = e.deltaY < 0 ? 1.1 : 0.9;
+    const newScale = Math.min(Math.max(scale * zoomFactor, 0.32), 2.0);
+    const rect = viewport.getBoundingClientRect();
+    const mouseX = e.clientX - rect.left;
+    const mouseY = e.clientY - rect.top;
+
+    panX = mouseX - (mouseX - panX) * (newScale / scale);
+    panY = mouseY - (mouseY - panY) * (newScale / scale);
+    scale = newScale;
+    updateTransform();
+  }, { passive: false });
+
+  function applyFilters(redraw = true) {
+    const ver = document.getElementById('versionSelect').value;
+    const team = document.getElementById('teamSelect').value;
+    const q = document.getElementById('searchInput').value.trim().toLowerCase();
+
+    document.getElementById('metaVersion').textContent = ver;
+    const verMap = { 'V00.01': 1, 'V00.02': 2, 'V00.03': 3, 'V00.04': 4, 'V01.00': 5 };
+    const currentVerNum = verMap[ver] || 5;
+
+    document.querySelectorAll('.risk-block').forEach(el => {
+      el.style.display = currentVerNum >= 4 ? 'block' : 'none';
+    });
+    document.querySelectorAll('.review-block, .m-pill.rev').forEach(el => {
+      el.style.display = currentVerNum >= 5 ? '' : 'none';
+    });
+
+    document.querySelectorAll('.comp-card').forEach(card => {
+      const cardMinVer = parseInt(card.getAttribute('data-minver') || '1', 10);
+      const cardTeam = card.getAttribute('data-team');
+      const text = card.innerText.toLowerCase();
+
+      const verOk = cardMinVer <= currentVerNum;
+      const teamOk = (team === 'ALL') || (cardTeam === team);
+      const searchOk = (!q) || text.includes(q);
+
+      card.classList.remove('dimmed', 'highlight-match');
+      if (!verOk || !teamOk || !searchOk) {
+        card.classList.add('dimmed');
+      } else if (q && searchOk) {
+        card.classList.add('highlight-match');
+      }
+    });
+
+    if (redraw) {
+      requestAnimationFrame(() => drawAllRelations());
+    }
+  }
+
+  window.addEventListener('resize', () => drawAllRelations());
+  window.addEventListener('load', () => {
+    updateTransform();
+    setTimeout(drawAllRelations, 80);
+  });
+</script>
+</body>
+</html>
