@@ -769,7 +769,7 @@
   <div class="controls-group">
     <span class="ctrl-label">Versión:</span>
     <select id="versionSelect" class="ctrl-select" onchange="applyFilters()">
-      <option value="V01.00" selected>V01.00 — Actual (6 en revisión)</option>
+      <option value="V01.00" selected>V01.00 — Definitiva Consolidada</option>
       <option value="V00.04">V00.04 — Con Riesgos MRI</option>
       <option value="V00.03">V00.03 — Trazabilidad CR</option>
       <option value="V00.02">V00.02 — Red Híbrida VPN</option>
@@ -855,8 +855,8 @@
     <div><b>Puntos con Riesgo Crítico (Matrices MRI):</b> Módulos expuestos a caída de red WAN, colisión de stock simultáneo o corte eléctrico.</div>
   </div>
   <div class="sem-item" data-sem="STATE_REV" onclick="applySemanticFilter('STATE_REV')">
-    <span class="sem-box" style="background:#fef08a;border:2px dashed #d97706;"></span>
-    <div><b>Decisiones Bajo Revisión (R1 a R6):</b> Puntos abiertos en validación final con el cliente y ajuste puntual del Catálogo de Requisitos.</div>
+    <span class="sem-box" style="background:#d1fae5;border:2px solid #059669;"></span>
+    <div><b>Ajustes de Trazabilidad Integrados (R1 a R6):</b> Mejoras cerradas e incorporadas al diseño y al Catálogo (métrica ≤ 2.0s en RNF-0007, tablas locales/sesión en BDD_0001 y doble backup).</div>
   </div>
 </aside>
 
@@ -1042,7 +1042,7 @@
               <span class="m-pill edu">EDU-0004 / EDU-0002</span>
               <span class="m-pill rnf">RNF-0004 / RNF-0006</span>
               <span class="m-pill risk">MRI-0005 (Crítico)</span>
-              <span class="m-pill rev">REVISIÓN R1</span>
+              <span class="m-pill rev">✓ R1: Tope 50 Tickets</span>
             </div>
           </div>
 
@@ -1052,10 +1052,10 @@
               <div class="rel-io-line"><b class="out">──► ENVÍA [2]:</b> Tráfico cifrado UDP 51820 hacia <code>C2-VPN (Servidor WireGuard)</code>.</div>
             </div>
             <div class="detail-block risk-block">
-              <div class="detail-heading">Riesgos MRI y Revisión R1</div>
+              <div class="detail-heading">Riesgos MRI y Control R1 Integrado</div>
               <ul class="detail-list">
                 <li><span class="code-inline">MRI-0005</span> (P4×I4=16): Corte de Internet en Local 2 activa cola contingente.</li>
-                <li><span class="code-inline">EN REVISIÓN R1</span>: Límite máximo de tickets offline permitidos en Local 2.</li>
+                <li><span class="code-inline">CONTROL R1 INTEGRADO</span>: Tope de contingencia offline fijado en 50 tickets o 4h sobre stock local (id_local = 2).</li>
               </ul>
             </div>
           </div>
@@ -1108,7 +1108,7 @@
               <span class="m-pill edu">EDU-0004 · ESP-0002</span>
               <span class="m-pill rnf">RNF-0001 / RNF-0002</span>
               <span class="m-pill risk">MRI-0005 / MRI-0008</span>
-              <span class="m-pill rev">REVISIÓN R1</span>
+              <span class="m-pill rev">✓ R1: Sync FIFO UUID</span>
             </div>
           </div>
 
@@ -1150,15 +1150,15 @@
               <span class="m-pill edu">Opción 2 (Figura 3)</span>
               <span class="m-pill rnf">RNF-0004 / RNF-0006</span>
               <span class="m-pill risk">MRI-0005 / MRI-0014</span>
-              <span class="m-pill rev">REVISIÓN R2</span>
+              <span class="m-pill rev">✓ R2: Keepalive 25s</span>
             </div>
           </div>
 
           <div class="micro-details">
             <div class="detail-block review-block">
-              <div class="detail-heading">Punto en Revisión R2</div>
+              <div class="detail-heading">Control R2 Integrado</div>
               <ul class="detail-list">
-                <li><span class="code-inline">REVISIÓN R2</span>: Validar IP pública vs CG-NAT del proveedor de Internet en Local 1.</li>
+                <li><span class="code-inline">CONTROL R2 INTEGRADO</span>: Túnel UDP 51820 con PersistentKeepalive=25s y DDNS para atravesar NAT/ISP en Local 1.</li>
               </ul>
             </div>
           </div>
@@ -1274,7 +1274,7 @@
               <span class="m-pill edu">ILA-0004 · ILA-0009</span>
               <span class="m-pill rnf">RNF-0003 / RNF-0008</span>
               <span class="m-pill risk">MRI-0001 / MRI-0016</span>
-              <span class="m-pill rev">REVISIÓN R5</span>
+              <span class="m-pill rev">✓ R5: Ficha DIGEMID</span>
             </div>
           </div>
 
@@ -1363,7 +1363,7 @@
               <span class="m-pill edu">EDU-0004 · ILA-0002 · DES-0001</span>
               <span class="m-pill rnf">RNF-0001 / RNF-0003 / RNF-0008</span>
               <span class="m-pill risk">MRI-0002 / MRI-0008</span>
-              <span class="m-pill rev">REVISIÓN R4</span>
+              <span class="m-pill rev">✓ R4: MRI Mitigados</span>
             </div>
           </div>
 
@@ -1417,7 +1417,7 @@
               <span class="m-pill edu">EDU-0010 · EDU-0012</span>
               <span class="m-pill edu">ILA-0003 · ILA-0021 · ILA-0022</span>
               <span class="m-pill rnf">RNF-0007 / RNF-0008</span>
-              <span class="m-pill rev">REVISIÓN R6</span>
+              <span class="m-pill rev">✓ R1/R6: Carga ≤ 2.0s</span>
             </div>
           </div>
 
@@ -1670,15 +1670,15 @@
               <span class="m-pill edu">Respaldo y Recuperación</span>
               <span class="m-pill rnf">RNF-0002 (Cada 24h)</span>
               <span class="m-pill risk">MRI-0004</span>
-              <span class="m-pill rev">REVISIÓN R3</span>
+              <span class="m-pill rev">✓ R3/R5: Doble Backup</span>
             </div>
           </div>
 
           <div class="micro-details">
             <div class="detail-block review-block">
-              <div class="detail-heading">Punto en Revisión R3</div>
+              <div class="detail-heading">Control R3/R5 Integrado</div>
               <ul class="detail-list">
-                <li><span class="code-inline">REVISIÓN R3</span>: Confirmar hora exacta del respaldo automático tras el cierre diario.</li>
+                <li><span class="code-inline">CONTROL R3/R5 INTEGRADO</span>: Respaldo automático al Cierre de Caja (ILA-0035) y a la 01:00 a.m. en disco y USB externo.</li>
               </ul>
             </div>
           </div>
