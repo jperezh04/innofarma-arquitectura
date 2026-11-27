@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Vista Física V01.00 — Despliegue Oficial | Innofarma</title>
+  <title>Vista Física V01.00 — Despliegue Oficial y Mapeo de las 5 Capas | Innofarma</title>
   <script src="https://cdn.jsdelivr.net/npm/mermaid@10/dist/mermaid.min.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/svg-pan-zoom@3.6.1/dist/svg-pan-zoom.min.js"></script>
   <style>
@@ -24,34 +24,33 @@
       -webkit-user-select: none;
     }
 
-    /* BARRA DE CONTROL FLOTANTE (ESTILO MARIFARMA SALUD) */
+    /* BARRA DE CONTROL FLOTANTE SUPERIOR DERECHA */
     .hud-bar {
       position: fixed;
-      top: 12px;
-      right: 16px;
+      top: 10px;
+      right: 14px;
       z-index: 2000;
       display: flex;
       align-items: center;
-      gap: 8px;
-      background: rgba(255, 255, 255, 0.96);
-      backdrop-filter: blur(8px);
-      border: 1.5px solid #0284c7;
-      border-radius: 10px;
-      padding: 6px 12px;
-      font-size: 11.5px;
-      box-shadow: 0 4px 14px rgba(2, 132, 199, 0.14);
-      max-width: calc(100vw - 32px);
+      gap: 6px;
+      background: rgba(255, 255, 255, 0.94);
+      backdrop-filter: blur(10px);
+      -webkit-backdrop-filter: blur(10px);
+      border: 2px solid #0f172a;
+      box-shadow: 4px 4px 0px #0f172a;
+      padding: 6px 10px;
+      font-size: 11px;
+      max-width: calc(100vw - 28px);
       flex-wrap: wrap;
     }
 
     .hud-status-badge {
-      background: #0284c7;
+      background: #0f172a;
       color: #ffffff;
       font-size: 10px;
-      font-weight: 700;
-      letter-spacing: 0.5px;
+      font-weight: 800;
+      letter-spacing: 0.4px;
       padding: 4px 8px;
-      border-radius: 6px;
       text-transform: uppercase;
       white-space: nowrap;
     }
@@ -65,73 +64,237 @@
 
     .btn-hud {
       background: #ffffff;
-      color: #0369a1;
-      border: 1.5px solid #0284c7;
-      border-radius: 6px;
-      padding: 5px 9px;
+      color: #0f172a;
+      border: 1.5px solid #0f172a;
+      padding: 4px 8px;
       font-family: inherit;
-      font-size: 11px;
-      font-weight: 700;
+      font-size: 10.5px;
+      font-weight: 800;
       cursor: pointer;
       display: inline-flex;
       align-items: center;
       gap: 4px;
-      transition: all 0.15s ease;
+      transition: all 0.14s ease;
       white-space: nowrap;
     }
 
     .btn-hud:hover {
-      background: #0284c7;
+      background: #f1f5f9;
+    }
+
+    .btn-hud.active-layer {
+      background: #0f172a;
       color: #ffffff;
+      box-shadow: 2px 2px 0px #047857;
     }
 
     .zoom-text {
-      font-weight: 700;
+      font-weight: 800;
       min-width: 44px;
       text-align: center;
-      font-size: 11.5px;
-      color: #0369a1;
+      font-size: 11px;
+      background: #fef08a;
+      border: 1.5px solid #0f172a;
+      padding: 3px 6px;
+      color: #0f172a;
     }
 
-    .hud-hint {
-      font-size: 10.5px;
-      color: #64748b;
-      margin-right: 4px;
-      white-space: nowrap;
-    }
-
-    /* LEYENDA SEMÁNTICA FLOTANTE INFERIOR */
-    .legend-bar {
+    /* PESTAÑA TRANSLÚCIDA SUPERIOR IZQUIERDA: MAPEO DE LAS 5 CAPAS + CONCURRENCIA */
+    .conc-floating-wrap {
       position: fixed;
-      bottom: 12px;
-      left: 16px;
-      z-index: 1500;
+      top: 10px;
+      left: 14px;
+      z-index: 2100;
       display: flex;
-      align-items: center;
-      gap: 10px;
-      flex-wrap: wrap;
-      background: rgba(255, 255, 255, 0.95);
-      backdrop-filter: blur(8px);
-      border: 1px solid #cbd5e1;
-      border-radius: 9px;
-      padding: 6px 12px;
-      font-size: 10.5px;
-      color: #334155;
-      box-shadow: 0 3px 10px rgba(15, 23, 42, 0.08);
+      flex-direction: column;
+      gap: 6px;
+      max-width: calc(100vw - 28px);
     }
 
-    .legend-item {
+    .tabs-trigger-row {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 6px;
+    }
+
+    .conc-tab-btn {
+      display: inline-flex;
+      align-items: center;
+      gap: 7px;
+      padding: 6px 11px;
+      background: rgba(255, 255, 255, 0.86);
+      backdrop-filter: blur(10px);
+      -webkit-backdrop-filter: blur(10px);
+      border: 2px solid rgba(15, 23, 42, 0.94);
+      box-shadow: 3px 3px 0px rgba(15, 23, 42, 0.8);
+      font-size: 11px;
+      font-weight: 800;
+      color: #0f172a;
+      cursor: pointer;
+      transition: all 0.14s ease;
+    }
+
+    .conc-tab-btn:hover {
+      background: rgba(236, 253, 245, 0.95);
+      transform: translateY(-1px);
+    }
+
+    .conc-dot {
+      width: 9px;
+      height: 9px;
+      border-radius: 50%;
+      background: #10b981;
+      border: 1.5px solid #065f46;
+      flex-shrink: 0;
+    }
+
+    /* PÍLDORAS RÁPIDAS PARA RESALTAR QUÉ CAPA ES CADA COSA */
+    .layer-pills-bar {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 4px;
+      background: rgba(255, 255, 255, 0.84);
+      backdrop-filter: blur(10px);
+      -webkit-backdrop-filter: blur(10px);
+      border: 2px solid rgba(15, 23, 42, 0.92);
+      box-shadow: 3px 3px 0px rgba(15, 23, 42, 0.78);
+      padding: 5px 7px;
+    }
+
+    .layer-filter-pill {
       display: inline-flex;
       align-items: center;
       gap: 5px;
-      font-weight: 600;
+      padding: 3.5px 8px;
+      font-size: 10px;
+      font-weight: 800;
+      border: 1.5px solid #0f172a;
+      background: #ffffff;
+      color: #0f172a;
+      cursor: pointer;
+      transition: all 0.12s ease;
     }
 
-    .legend-dot {
+    .layer-filter-pill:hover {
+      transform: translateY(-1px);
+    }
+
+    .layer-filter-pill.active {
+      background: #0f172a !important;
+      color: #ffffff !important;
+      box-shadow: 2px 2px 0px #047857;
+    }
+
+    .l-swatch {
       width: 10px;
       height: 10px;
-      border-radius: 3px;
+      border: 1.5px solid #0f172a;
       display: inline-block;
+    }
+
+    .conc-glass-panel {
+      display: none;
+      width: 365px;
+      max-width: calc(100vw - 28px);
+      max-height: calc(100vh - 135px);
+      overflow-y: auto;
+      background: rgba(255, 255, 255, 0.88);
+      backdrop-filter: blur(12px);
+      -webkit-backdrop-filter: blur(12px);
+      border: 2px solid rgba(15, 23, 42, 0.94);
+      box-shadow: 6px 6px 0px rgba(15, 23, 42, 0.82);
+    }
+
+    .conc-glass-panel.open {
+      display: block;
+    }
+
+    .conc-panel-head {
+      background: rgba(15, 23, 42, 0.94);
+      color: #ffffff;
+      padding: 8px 12px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      font-size: 11px;
+      font-weight: 900;
+      text-transform: uppercase;
+    }
+
+    .conc-panel-body {
+      padding: 10px 11px;
+    }
+
+    .conc-meter-box {
+      background: rgba(236, 253, 245, 0.86);
+      border: 1.5px solid #059669;
+      padding: 7px 9px;
+      margin-bottom: 8px;
+    }
+
+    .conc-meter-title {
+      font-size: 10.5px;
+      font-weight: 900;
+      color: #065f46;
+      text-transform: uppercase;
+    }
+
+    .conc-meter-sub {
+      font-size: 9.8px;
+      font-weight: 600;
+      color: #1e293b;
+      margin-top: 2px;
+    }
+
+    .conc-card {
+      background: rgba(248, 250, 252, 0.88);
+      border: 1.5px solid #cbd5e1;
+      border-left: 4px solid #0d9488;
+      padding: 6px 9px;
+      margin-bottom: 6px;
+      cursor: pointer;
+      transition: all 0.12s ease;
+    }
+
+    .conc-card:hover {
+      background: rgba(254, 252, 232, 0.95);
+      border-color: #0f172a;
+      transform: translateX(2px);
+    }
+
+    .conc-card.active-card {
+      background: rgba(254, 240, 138, 0.94);
+      border-color: #0f172a;
+      box-shadow: 2px 2px 0px #0f172a;
+    }
+
+    .conc-card-head {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 6px;
+      margin-bottom: 2px;
+    }
+
+    .conc-card-title {
+      font-size: 10.5px;
+      font-weight: 900;
+      color: #0f172a;
+    }
+
+    .conc-card-badge {
+      font-size: 8.5px;
+      font-weight: 800;
+      padding: 1.5px 5px;
+      border: 1px solid currentColor;
+      background: rgba(255, 255, 255, 0.92);
+      white-space: nowrap;
+    }
+
+    .conc-card-desc {
+      font-size: 9.8px;
+      line-height: 1.32;
+      color: #334155;
     }
 
     /* LIENZO DE NAVEGACIÓN PAN & ZOOM */
@@ -141,10 +304,11 @@
       display: flex;
       align-items: center;
       justify-content: center;
-      background: radial-gradient(#bae6fd 1.1px, transparent 1.1px);
+      background: radial-gradient(#cbd5e1 1.1px, transparent 1.1px);
       background-size: 24px 24px;
       background-color: #f8fafc;
       cursor: grab;
+      touch-action: none;
     }
 
     #container:active {
@@ -162,58 +326,192 @@
       max-width: none !important;
     }
 
-    /* Pulido de etiquetas de aristas en Mermaid */
     #mermaid-target .edgeLabel {
-      background-color: rgba(255, 255, 255, 0.94) !important;
+      background-color: rgba(255, 255, 255, 0.95) !important;
       padding: 2px 6px !important;
-      border-radius: 5px !important;
-      border: 1px solid #cbd5e1 !important;
+      border-radius: 4px !important;
+      border: 1.5px solid #0f172a !important;
       color: #0f172a !important;
-      font-weight: 600 !important;
-      font-size: 11.5px !important;
+      font-weight: 700 !important;
+      font-size: 11px !important;
     }
 
     #mermaid-target .cluster rect {
-      rx: 8px !important;
-      ry: 8px !important;
+      rx: 6px !important;
+      ry: 6px !important;
     }
 
     #mermaid-target .cluster-label span,
     #mermaid-target .cluster-label text {
-      font-weight: 700 !important;
+      font-weight: 800 !important;
+    }
+
+    /* EFECTO DE RESALTADO POR CAPA EN LOS NODOS SVG DE MERMAID */
+    #mermaid-target g.node {
+      transition: opacity 0.18s ease, filter 0.18s ease;
+    }
+
+    #mermaid-target.filtering-layer g.node.layer-dimmed {
+      opacity: 0.18 !important;
+      filter: grayscale(0.7);
+    }
+
+    #mermaid-target.filtering-layer g.node.layer-active rect,
+    #mermaid-target.filtering-layer g.node.layer-active path,
+    #mermaid-target.filtering-layer g.node.layer-active polygon,
+    #mermaid-target.filtering-layer g.node.layer-active circle {
+      stroke-width: 3.5px !important;
+      filter: drop-shadow(3px 3px 0px #0f172a);
     }
 
     @media (max-width: 768px) {
-      .hud-hint, .legend-bar { display: none; }
+      .hud-bar {
+        top: auto;
+        bottom: 10px;
+        right: 10px;
+        left: 10px;
+        justify-content: space-between;
+      }
+      .conc-floating-wrap {
+        top: 8px;
+        left: 8px;
+        right: 8px;
+      }
+      .conc-glass-panel {
+        width: 100%;
+        max-height: calc(100vh - 180px);
+      }
     }
   </style>
 </head>
 <body>
 
+  <!-- PESTAÑAS TRANSLÚCIDAS Y FILTRO DE LAS 5 CAPAS EN VISTA FÍSICA -->
+  <div class="conc-floating-wrap">
+    <div class="tabs-trigger-row">
+      <button class="conc-tab-btn" onclick="toggleLayerGuide(event)">
+        <span>📐 ¿Qué Capa es cada componente físico?</span>
+        <span id="layerChevron">▾</span>
+      </button>
+      <button class="conc-tab-btn" onclick="toggleConcPanel(event)">
+        <span class="conc-dot"></span>
+        <span>⚡ Concurrencia: <b>BAJA (2–3 ses.)</b></span>
+        <span id="concChevron">▾</span>
+      </button>
+    </div>
+
+    <!-- BARRA DE PÍLDORAS INTERACTIVAS DE LAS 5 CAPAS -->
+    <div class="layer-pills-bar">
+      <button class="layer-filter-pill active" data-lfilter="ALL" onclick="filterPhysicalLayer('ALL')">Todas las Capas</button>
+      <button class="layer-filter-pill" data-lfilter="DOM_UI" onclick="filterPhysicalLayer('DOM_UI')">
+        <span class="l-swatch" style="background:#dbeafe;border-color:#1d4ed8;"></span>Capa 1: Clientes Web
+      </button>
+      <button class="layer-filter-pill" data-lfilter="DOM_SEC" onclick="filterPhysicalLayer('DOM_SEC')">
+        <span class="l-swatch" style="background:#fef3c7;border-color:#b45309;"></span>Capa 2: VPN y Proxy TLS
+      </button>
+      <button class="layer-filter-pill" data-lfilter="DOM_CORE" onclick="filterPhysicalLayer('DOM_CORE')">
+        <span class="l-swatch" style="background:#d1fae5;border-color:#047857;"></span>Capa 3: Backend (11 EDU)
+      </button>
+      <button class="layer-filter-pill" data-lfilter="DOM_DATA" onclick="filterPhysicalLayer('DOM_DATA')">
+        <span class="l-swatch" style="background:#ede9fe;border-color:#6d28d9;"></span>Capa 4: BD / IndexedDB
+      </button>
+      <button class="layer-filter-pill" data-lfilter="DOM_HW" onclick="filterPhysicalLayer('DOM_HW')">
+        <span class="l-swatch" style="background:#e2e8f0;border-color:#334155;"></span>Capa 5: PCs / Red / USB
+      </button>
+    </div>
+
+    <!-- PANEL TRANSLÚCIDO 1: GUÍA DE MAPEO DE LAS 5 CAPAS EN EL DESPLIEGUE FÍSICO -->
+    <div class="conc-glass-panel" id="layerGuidePanel">
+      <div class="conc-panel-head">
+        <span>📐 Mapeo de las 5 Capas (ASW-0001) en Vista Física</span>
+        <div style="display:flex;gap:6px;align-items:center;">
+          <button onclick="filterPhysicalLayer('ALL')" style="background:#10b981;color:#fff;border:none;padding:2px 6px;font-size:9.5px;font-weight:800;cursor:pointer;">Ver Todas</button>
+          <button onclick="toggleLayerGuide(event)" style="background:none;border:none;color:#cbd5e1;font-size:13px;font-weight:900;cursor:pointer;">✕</button>
+        </div>
+      </div>
+      <div class="conc-panel-body">
+        <div class="conc-card" style="border-left-color:#1d4ed8;" onclick="filterPhysicalLayer('DOM_UI')">
+          <div class="conc-card-head">
+            <span class="conc-card-title">CAPA 1 · Interacción y Clientes Web</span>
+            <span class="conc-card-badge" style="color:#1d4ed8;">BR1 · BR2 · BRM</span>
+          </div>
+          <div class="conc-card-desc">• <b>Navegador Caja 1</b> (<code>C1-POS-L1</code> en <code>https://localhost</code>).<br/>• <b>Navegador PWA Caja 2</b> (<code>C1-POS-L2</code> en <code>https://10.10.0.1</code>).<br/>• <b>Navegador Móvil/Laptop Admin</b> (<code>C1-ADMIN</code>).</div>
+        </div>
+
+        <div class="conc-card" style="border-left-color:#b45309;" onclick="filterPhysicalLayer('DOM_SEC')">
+          <div class="conc-card-head">
+            <span class="conc-card-title">CAPA 2 · Seguridad, VPN y Proxy TLS</span>
+            <span class="conc-card-badge" style="color:#b45309;">WG1 · WG2 · WGM · HTTP1</span>
+          </div>
+          <div class="conc-card-desc">• <b>Servidor WireGuard</b> en PC1 (<code>10.10.0.1:51820</code>) y Clientes VPN en PC2 (<code>10.10.0.2</code>) y Móvil Admin (<code>10.10.0.3</code>).<br/>• <b>Servidor Web Apache/Nginx</b> (<code>Puerto 443 HTTPS</code> + Middleware RBAC <code>EDU-0006</code>).</div>
+        </div>
+
+        <div class="conc-card" style="border-left-color:#047857;" onclick="filterPhysicalLayer('DOM_CORE')">
+          <div class="conc-card-head">
+            <span class="conc-card-title">CAPA 3 · Dominio y Lógica de Negocio</span>
+            <span class="conc-card-badge" style="color:#047857;">APP1 (11 EDU)</span>
+          </div>
+          <div class="conc-card-desc">• <b>Innofarma Backend (PHP 8.2 / Laravel 11)</b> alojado en PC1: ejecuta en memoria los 11 módulos <code>EDU-0002..0013</code> (Catálogo, Compras, Lotes FEFO, Ventas, Caja, Turnos, Reportes y POE).</div>
+        </div>
+
+        <div class="conc-card" style="border-left-color:#6d28d9;" onclick="filterPhysicalLayer('DOM_DATA')">
+          <div class="conc-card-head">
+            <span class="conc-card-title">CAPA 4 · Persistencia Transaccional ACID</span>
+            <span class="conc-card-badge" style="color:#6d28d9;">DB1 · IDB2</span>
+          </div>
+          <div class="conc-card-desc">• <b>PostgreSQL 16</b> (<code>marifarma_gestion_db</code> en <code>localhost:5432</code> de PC1) con stock particionado por <code>id_local</code>.<br/>• <b>IndexedDB (Dexie.js)</b> en PC2 para caché y cola contingente offline.</div>
+        </div>
+
+        <div class="conc-card" style="border-left-color:#334155;" onclick="filterPhysicalLayer('DOM_HW')">
+          <div class="conc-card-head">
+            <span class="conc-card-title">CAPA 5 · Infraestructura Física y USB</span>
+            <span class="conc-card-badge" style="color:#334155;">PC1 · PC2 · R1/R2 · USB</span>
+          </div>
+          <div class="conc-card-desc">• <b>2x Lenovo ThinkCentre Neo 50s</b> (Core i3-12100F, 8GB RAM, 256GB NVMe, Windows 10 Pro).<br/>• <b>Routers LAN/WAN</b> y <b>Periféricos USB</b> (Impresoras térmicas 80mm + Lectores de barras HID).</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- PANEL TRANSLÚCIDO 2: CONCURRENCIA Y PARALELISMO FÍSICO -->
+    <div class="conc-glass-panel" id="concPanel">
+      <div class="conc-panel-head">
+        <span>⚡ Concurrencia y Paralelismo en Despliegue</span>
+        <button onclick="toggleConcPanel(event)" style="background:none;border:none;color:#cbd5e1;font-size:13px;font-weight:900;cursor:pointer;">✕</button>
+      </div>
+      <div class="conc-panel-body">
+        <div class="conc-meter-box">
+          <div class="conc-meter-title">Carga Concurrente: Baja / Acotada (2–3 Sesiones)</div>
+          <div class="conc-meter-sub">• <i>Nota del arquitecto:</i> Flujo dimensionado sobre proceso monolítico modular local (&lt; 1 req/s).</div>
+        </div>
+        <div class="conc-card" style="border-left-color:#059669;" onclick="filterPhysicalLayer('DOM_UI')">
+          <div class="conc-card-head"><span class="conc-card-title">1. Paralelismo entre Puestos Caja 1 y Caja 2</span><span class="conc-card-badge" style="color:#047857;">PARALELO PURO</span></div>
+          <div class="conc-card-desc">• <code>BR1</code> (Local 1 LAN) y <code>BR2</code> (Local 2 VPN) descuentan stock de su propio <code>id_local</code> en paralelo sin bloquearse.</div>
+        </div>
+        <div class="conc-card" style="border-left-color:#6d28d9;" onclick="filterPhysicalLayer('DOM_DATA')">
+          <div class="conc-card-head"><span class="conc-card-title">2. Control de Colisión en PostgreSQL 16</span><span class="conc-card-badge" style="color:#6d28d9;">MVCC + FOR UPDATE</span></div>
+          <div class="conc-card-desc">• <code>DB1</code> atiende lecturas en paralelo (<code>MVCC</code>) y serializa por fila (<code>SELECT FOR UPDATE</code> &lt;15 ms) si dos sesiones tocan el mismo lote.</div>
+        </div>
+        <div class="conc-card" style="border-left-color:#334155;" onclick="filterPhysicalLayer('DOM_HW')">
+          <div class="conc-card-head"><span class="conc-card-title">3. Paralelismo Físico en PC 1 (4C / 8 Hilos)</span><span class="conc-card-badge" style="color:#334155;">i3-12100 · 8GB</span></div>
+          <div class="conc-card-desc">• <code>PC 1</code> ejecuta en paralelo Puesto Caja 1 (1er plano) y Servicios Backend/BD/VPN (2do plano) con RAM acotada.</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
   <!-- BARRA DE CONTROL FLOTANTE (HUD) -->
   <header class="hud-bar">
-    <span class="hud-status-badge">VISTA FÍSICA V01.00</span>
-    <span class="hud-hint">Arrastrar: Pan | Rueda: Zoom</span>
+    <span class="hud-status-badge">VISTA FÍSICA V01.00 · 5 CAPAS</span>
     <div class="hud-controls">
-      <button class="btn-hud" id="btnZoomOut">− Zoom</button>
+      <button class="btn-hud" id="btnZoomOut">−</button>
       <span class="zoom-text" id="zoomText">100%</span>
-      <button class="btn-hud" id="btnZoomIn">+ Zoom</button>
+      <button class="btn-hud" id="btnZoomIn">+</button>
       <button class="btn-hud" id="btnFit">Ajustar</button>
       <button class="btn-hud" id="btnReset">Reset</button>
-      <button class="btn-hud" id="btnSvg">Descargar SVG</button>
-      <button class="btn-hud" id="btnCopy">Copiar Código</button>
+      <button class="btn-hud" id="btnSvg">SVG</button>
+      <button class="btn-hud" id="btnCopy">Código</button>
     </div>
   </header>
-
-  <!-- LEYENDA SEMÁNTICA MARIFARMA SALUD -->
-  <div class="legend-bar">
-    <strong style="color:#0f172a;">Semántica Marifarma Salud:</strong>
-    <span class="legend-item"><span class="legend-dot" style="background:#ccfbf1;border:1.5px solid #0d9488;"></span>Aplicación / POS (PWA &amp; Laravel)</span>
-    <span class="legend-item"><span class="legend-dot" style="background:#d1fae5;border:1.5px solid #059669;"></span>Datos / Stock (PostgreSQL &amp; IndexedDB)</span>
-    <span class="legend-item"><span class="legend-dot" style="background:#e0f2fe;border:1.5px solid #0284c7;"></span>Red / VPN WireGuard</span>
-    <span class="legend-item"><span class="legend-dot" style="background:#e0e7ff;border:1.5px solid #4338ca;"></span>Admin Remota</span>
-    <span class="legend-item"><span class="legend-dot" style="background:#f1f5f9;border:1.5px solid #475569;"></span>Hardware / SO / USB</span>
-  </div>
 
   <div id="container">
     <div id="mermaid-target"></div>
@@ -221,63 +519,63 @@
 
   <script>
     const mermaidCode = `flowchart TB
-    %% =========================================================
-    %% VISTA FÍSICA V01.00 — ARQUITECTURA DE DESPLIEGUE INNOFARMA
-    %% =========================================================
+    %% =========================================================================
+    %% VISTA FÍSICA V01.00 — ARQUITECTURA DE DESPLIEGUE CON MAPEO DE LAS 5 CAPAS
+    %% =========================================================================
 
-    subgraph WAN ["Nube Pública / Internet"]
+    subgraph WAN ["Nube Pública / Internet (Transporte WAN)"]
         direction TB
-        INET(("Internet Pública"))
+        INET(("Internet Pública<br/><i>Fibra / 4G-5G</i>"))
     end
 
-    subgraph L1 ["Local 1 — Sucursal Central (Servidor + Caja 1)"]
+    subgraph L1 ["Local 1 — Sucursal Central (Servidor Anfitrión + Puesto Caja 1)"]
         direction TB
         subgraph L1_NET ["Red LAN Local 1 (Subred 192.168.1.0/24)"]
-            R1["Router Local 1<br/><i>IP Pública Dinámica + DDNS</i><br/><b>Port Forward: UDP 51820</b>"]
+            R1["<b>[CAPA 5 · RED LAN 1]</b><br/>Router Local 1<br/><i>IP Pública Dinámica + DDNS</i><br/><b>Port Forward: UDP 51820</b>"]
 
-            subgraph PC1 ["PC 1: Lenovo ThinkCentre Neo 50s (Servidor Local)"]
-                OS1["Windows 10 Pro (64-bit)<br/>Core i3-12100F | 8GB RAM | 256GB NVMe"]
+            subgraph PC1 ["[CAPA 5 · C5-PC-L1] PC 1: Lenovo ThinkCentre Neo 50s (Servidor + Caja 1)"]
+                OS1["<b>[CAPA 5 · HARDWARE / SO]</b><br/>Windows 10 Pro (64-bit)<br/>Core i3-12100F (4C/8H) | 8GB RAM | 256GB NVMe"]
 
-                subgraph SVR ["Servicios de Backend & Red"]
-                    WG1["Servidor WireGuard<br/><b>10.10.0.1:51820</b>"]
-                    HTTP1["Servidor Web Apache / Nginx<br/><b>Puerto 443 (HTTPS)</b>"]
-                    APP1["Innofarma Backend<br/><b>PHP 8.2 / Laravel 11</b>"]
-                    DB1[("PostgreSQL 16<br/><b>Stock Centralizado</b><br/><i>localhost:5432</i>")]
+                subgraph SVR ["Servicios Alojados en PC 1 (Capas 2, 3 y 4)"]
+                    WG1["<b>[CAPA 2 · C2-VPN]</b><br/>Servidor WireGuard VPN<br/><b>10.10.0.1:51820</b>"]
+                    HTTP1["<b>[CAPA 2 · C2-GW / C2-RBAC]</b><br/>Servidor Web Apache / Nginx<br/><b>Puerto 443 (HTTPS + Auth RBAC)</b>"]
+                    APP1["<b>[CAPA 3 · DOMINIO 11 EDU]</b><br/>Innofarma Backend (Monolito Modular)<br/><b>PHP 8.2 / Laravel 11</b>"]
+                    DB1[("<b>[CAPA 4 · C4-PG / BDD_0001]</b><br/>PostgreSQL 16 (Stock Centralizado)<br/><i>127.0.0.1:5432 (ACID + MVCC)</i>")]
                 end
 
-                subgraph CJ1 ["Puesto Caja 1 (Local)"]
-                    BR1["Navegador Web (Chrome/Edge)<br/><i>https://localhost</i>"]
-                    PRN1["Impresora Térmica 80mm<br/><i>(Conexión USB)</i>"]
-                    BAR1["Lector de Código de Barras<br/><i>(USB HID)</i>"]
+                subgraph CJ1 ["Puesto Caja 1 — Atención Local (Capas 1 y 5)"]
+                    BR1["<b>[CAPA 1 · C1-POS-L1]</b><br/>Navegador Web Caja 1 (Chrome/Edge)<br/><i>https://localhost</i>"]
+                    PRN1["<b>[CAPA 5 · PERIFÉRICO USB]</b><br/>Impresora Térmica 80mm<br/><i>(Conexión USB)</i>"]
+                    BAR1["<b>[CAPA 5 · PERIFÉRICO USB]</b><br/>Lector de Código de Barras<br/><i>(USB HID)</i>"]
                 end
             end
         end
     end
 
-    subgraph L2 ["Local 2 — Sucursal Secundaria (Caja 2 Independiente)"]
+    subgraph L2 ["Local 2 — Sucursal Secundaria (Puesto Caja 2 Remoto / Offline)"]
         direction TB
         subgraph L2_NET ["Red LAN Local 2 (Subred 192.168.2.0/24)"]
-            R2["Router Local 2<br/><i>Salida estándar a Internet</i>"]
+            R2["<b>[CAPA 5 · RED LAN 2]</b><br/>Router Local 2<br/><i>Salida estándar a Internet</i>"]
 
-            subgraph PC2 ["PC 2: Lenovo ThinkCentre Neo 50s (Cliente / Offline)"]
-                OS2["Windows 10 Pro (64-bit)<br/>Core i3-12100F | 8GB RAM | 256GB NVMe"]
+            subgraph PC2 ["[CAPA 5 · C5-PC-L2] PC 2: Lenovo ThinkCentre Neo 50s (Cliente / Offline)"]
+                OS2["<b>[CAPA 5 · HARDWARE / SO]</b><br/>Windows 10 Pro (64-bit)<br/>Core i3-12100F (4C/8H) | 8GB RAM | 256GB NVMe"]
 
-                subgraph CLIENT2 ["Puesto de Venta Local 2"]
-                    WG2["Cliente WireGuard<br/><b>Túnel VPN: 10.10.0.2</b>"]
-                    BR2["Navegador Web / PWA<br/><i>https://10.10.0.1</i>"]
-                    IDB2[("IndexedDB (Dexie.js)<br/><b>Copia Local Stock Local 2</b><br/><b>Cola Ventas Offline</b>")]
-                    PRN2["Impresora Térmica 80mm<br/><i>(Conexión USB)</i>"]
-                    BAR2["Lector de Código de Barras<br/><i>(USB HID)</i>"]
+                subgraph CLIENT2 ["Puesto de Venta Local 2 (Capas 1, 2, 4 y 5)"]
+                    WG2["<b>[CAPA 2 · C2-VPN]</b><br/>Cliente WireGuard Local 2<br/><b>Túnel VPN: 10.10.0.2</b>"]
+                    BR2["<b>[CAPA 1 · C1-POS-L2]</b><br/>Navegador Web / PWA Caja 2<br/><i>https://10.10.0.1</i>"]
+                    IDB2[("<b>[CAPA 4 · C4-IDB / C1-OFF]</b><br/>IndexedDB (Dexie.js)<br/><b>Caché Stock Local 2 + Cola Offline</b>")]
+                    PRN2["<b>[CAPA 5 · PERIFÉRICO USB]</b><br/>Impresora Térmica 80mm<br/><i>(Conexión USB)</i>"]
+                    BAR2["<b>[CAPA 5 · PERIFÉRICO USB]</b><br/>Lector de Código de Barras<br/><i>(USB HID)</i>"]
                 end
             end
         end
     end
 
-    subgraph REMOTO ["Administración Remota (Propietaria)"]
+    subgraph REMOTO ["Administración Remota — Propietaria / Q.F. (Capas 1 y 2)"]
         direction TB
-        subgraph MOB ["Dispositivo Móvil / Laptop"]
-            WGM["Cliente WireGuard<br/><b>Túnel VPN: 10.10.0.3</b><br/><i>(Autenticado vía QR)</i>"]
-            BRM["Navegador Móvil Seguro<br/><i>Dashboard: https://10.10.0.1</i>"]
+        subgraph MOB ["Dispositivo Móvil / Laptop Personal"]
+            WGM["<b>[CAPA 2 · C2-VPN]</b><br/>Cliente WireGuard Admin<br/><b>Túnel VPN: 10.10.0.3 (QR)</b>"]
+            BRM["<b>[CAPA 1 · C1-ADMIN]</b><br/>Navegador Móvil / Laptop<br/><i>Dashboard: https://10.10.0.1</i>"]
         end
     end
 
@@ -305,31 +603,31 @@
     WGM ==>|"Túnel Encriptado Admin a L1"| WG1
     BRM --> WGM
 
-    %% Clases Semánticas Marifarma Salud
-    classDef appNode fill:#ccfbf1,stroke:#0d9488,color:#0f172a,stroke-width:2px;
-    classDef dbNode fill:#d1fae5,stroke:#059669,color:#064e3b,stroke-width:2px;
-    classDef netNode fill:#e0f2fe,stroke:#0284c7,color:#0c4a6e,stroke-width:2px;
-    classDef adminNode fill:#e0e7ff,stroke:#4338ca,color:#1e1b4b,stroke-width:2px;
-    classDef hwNode fill:#f1f5f9,stroke:#475569,color:#1e293b,stroke-width:1.8px;
+    %% Clases Visuales por Capa Arquitectónica (ASW-0001)
+    classDef layer1Node fill:#dbeafe,stroke:#1d4ed8,color:#0f172a,stroke-width:2.2px;
+    classDef layer2Node fill:#fef3c7,stroke:#b45309,color:#0f172a,stroke-width:2.2px;
+    classDef layer3Node fill:#d1fae5,stroke:#047857,color:#064e3b,stroke-width:2.5px;
+    classDef layer4Node fill:#ede9fe,stroke:#6d28d9,color:#1e1b4b,stroke-width:2.2px;
+    classDef layer5Node fill:#e2e8f0,stroke:#334155,color:#0f172a,stroke-width:1.8px;
 
-    class BR1,BR2,HTTP1,APP1 appNode;
-    class DB1,IDB2 dbNode;
-    class R1,R2,WG1,WG2,INET netNode;
-    class BRM,WGM adminNode;
-    class OS1,OS2,BAR1,PRN1,BAR2,PRN2 hwNode;
+    class BR1,BR2,BRM layer1Node;
+    class WG1,WG2,WGM,HTTP1 layer2Node;
+    class APP1 layer3Node;
+    class DB1,IDB2 layer4Node;
+    class OS1,OS2,R1,R2,PRN1,BAR1,PRN2,BAR2,INET layer5Node;
 
-    style REMOTO fill:#eef2ff,stroke:#4338ca,stroke-width:2px,color:#1e1b4b
-    style MOB fill:#ffffff,stroke:#6366f1,stroke-width:1.5px,color:#312e81
+    style REMOTO fill:#eff6ff,stroke:#1d4ed8,stroke-width:2px,color:#1e3a8a
+    style MOB fill:#ffffff,stroke:#3b82f6,stroke-width:1.5px,color:#1e3a8a
     style L2 fill:#f0f9ff,stroke:#0284c7,stroke-width:2px,color:#0c4a6e
-    style L2_NET fill:#f8fafc,stroke:#d97706,stroke-width:1.5px,color:#78350f
-    style PC2 fill:#ffffff,stroke:#475569,stroke-width:1.8px,color:#0f172a
-    style CLIENT2 fill:#f0fdfa,stroke:#0d9488,stroke-width:1.5px,color:#0f766e
-    style WAN fill:#eff6ff,stroke:#0284c7,stroke-width:2px,color:#0c4a6e
+    style L2_NET fill:#f8fafc,stroke:#64748b,stroke-width:1.5px,color:#334155
+    style PC2 fill:#ffffff,stroke:#334155,stroke-width:2px,color:#0f172a
+    style CLIENT2 fill:#f8fafc,stroke:#0d9488,stroke-width:1.5px,color:#0f766e
+    style WAN fill:#f1f5f9,stroke:#475569,stroke-width:2px,color:#0f172a
     style L1 fill:#ecfdf5,stroke:#059669,stroke-width:2px,color:#064e3b
-    style L1_NET fill:#f8fafc,stroke:#d97706,stroke-width:1.5px,color:#78350f
-    style PC1 fill:#ffffff,stroke:#475569,stroke-width:1.8px,color:#0f172a
-    style CJ1 fill:#f0fdfa,stroke:#0d9488,stroke-width:1.5px,color:#0f766e
-    style SVR fill:#ecfdf5,stroke:#059669,stroke-width:1.5px,color:#065f46`;
+    style L1_NET fill:#f8fafc,stroke:#64748b,stroke-width:1.5px,color:#334155
+    style PC1 fill:#ffffff,stroke:#334155,stroke-width:2px,color:#0f172a
+    style CJ1 fill:#eff6ff,stroke:#1d4ed8,stroke-width:1.5px,color:#1e3a8a
+    style SVR fill:#f0fdf4,stroke:#047857,stroke-width:1.5px,color:#065f46`;
 
     mermaid.initialize({
       startOnLoad: false,
@@ -343,7 +641,7 @@
       },
       themeVariables: {
         fontFamily: 'Segoe UI, Arial, sans-serif',
-        fontSize: '13px',
+        fontSize: '12.5px',
         primaryColor: '#e0f2fe',
         primaryTextColor: '#0f172a',
         primaryBorderColor: '#0284c7',
@@ -354,6 +652,78 @@
     });
 
     let panZoomInstance = null;
+    let activeLayerFilter = 'ALL';
+
+    const LAYER_NODE_MAP = {
+      DOM_UI:   ['BR1', 'BR2', 'BRM'],
+      DOM_SEC:  ['WG1', 'WG2', 'WGM', 'HTTP1'],
+      DOM_CORE: ['APP1'],
+      DOM_DATA: ['DB1', 'IDB2'],
+      DOM_HW:   ['OS1', 'OS2', 'R1', 'R2', 'PRN1', 'BAR1', 'PRN2', 'BAR2', 'INET'],
+      STATE_RISK: ['WG1', 'WG2', 'DB1', 'IDB2', 'OS1', 'R1'],
+      STATE_REV:  ['WG1', 'WG2', 'IDB2', 'DB1']
+    };
+
+    function toggleLayerGuide(ev) {
+      if (ev) ev.stopPropagation();
+      const panel = document.getElementById('layerGuidePanel');
+      const chev = document.getElementById('layerChevron');
+      document.getElementById('concPanel').classList.remove('open');
+      const isOpen = panel.classList.toggle('open');
+      if (chev) chev.textContent = isOpen ? '▴' : '▾';
+    }
+
+    function toggleConcPanel(ev) {
+      if (ev) ev.stopPropagation();
+      const panel = document.getElementById('concPanel');
+      const chev = document.getElementById('concChevron');
+      document.getElementById('layerGuidePanel').classList.remove('open');
+      const isOpen = panel.classList.toggle('open');
+      if (chev) chev.textContent = isOpen ? '▴' : '▾';
+    }
+    window.toggleConcPanel = toggleConcPanel;
+
+    function filterPhysicalLayer(category) {
+      if (activeLayerFilter === category && category !== 'ALL') {
+        category = 'ALL';
+      }
+      activeLayerFilter = category;
+
+      document.querySelectorAll('.layer-filter-pill').forEach(btn => {
+        btn.classList.toggle('active', btn.dataset.lfilter === category);
+      });
+
+      const target = document.getElementById('mermaid-target');
+      const allNodes = target.querySelectorAll('g.node');
+
+      if (!category || category === 'ALL' || !LAYER_NODE_MAP[category]) {
+        target.classList.remove('filtering-layer');
+        allNodes.forEach(n => n.classList.remove('layer-active', 'layer-dimmed'));
+        return;
+      }
+
+      const allowedPrefixes = LAYER_NODE_MAP[category];
+      target.classList.add('filtering-layer');
+
+      allNodes.forEach(node => {
+        const id = node.id || '';
+        // Mermaid generates IDs like "flowchart-BR1-12"
+        const matches = allowedPrefixes.some(code => id.includes(`-${code}-`) || id.endsWith(`-${code}`));
+        node.classList.toggle('layer-active', matches);
+        node.classList.toggle('layer-dimmed', !matches);
+      });
+    }
+
+    window.applySemanticFilter = filterPhysicalLayer;
+
+    window.addEventListener('message', (e) => {
+      if (e.data && (e.data.type === 'SEMANTIC_FILTER' || e.data.type === 'APPLY_SEMANTIC_FILTER')) {
+        activeLayerFilter = '';
+        filterPhysicalLayer(e.data.category || 'ALL');
+      } else if (e.data && e.data.type === 'TOGGLE_CONCURRENCY') {
+        toggleConcPanel();
+      }
+    });
 
     async function renderDiagram() {
       const target = document.getElementById('mermaid-target');
@@ -365,6 +735,7 @@
 
       panZoomInstance = svgPanZoom(svgElement, {
         zoomEnabled: true,
+        mouseWheelZoomEnabled: false, // Usamos nuestro zoom exponencial suave para touchpad
         controlIconsEnabled: false,
         fit: true,
         center: true,
@@ -375,14 +746,68 @@
         }
       });
 
-      document.getElementById('btnZoomIn').addEventListener('click', () => panZoomInstance.zoomIn());
-      document.getElementById('btnZoomOut').addEventListener('click', () => panZoomInstance.zoomOut());
+      // ZOOM EXPONENCIAL SUAVE PARA TOUCHPAD DE LAPTOP Y RUEDA DE MOUSE
+      const container = document.getElementById('container');
+      container.addEventListener('wheel', (e) => {
+        if (!panZoomInstance) return;
+        e.preventDefault();
+        let dy = e.deltaY;
+        let dx = e.deltaX;
+        if (e.deltaMode === 1) { dy *= 16; dx *= 16; }
+        else if (e.deltaMode === 2) { dy *= 100; dx *= 100; }
+
+        if (!e.ctrlKey && Math.abs(dx) > Math.abs(dy) * 1.35 && Math.abs(dx) > 2) {
+          panZoomInstance.panBy({ x: -dx * 0.85, y: -dy * 0.85 });
+          return;
+        }
+
+        const clampedDy = Math.max(-110, Math.min(110, dy));
+        const sensitivity = e.ctrlKey ? 0.0075 : (Math.abs(dy) < 45 ? 0.0024 : 0.0012);
+        const zoomFactor = Math.exp(-clampedDy * sensitivity);
+        const rect = container.getBoundingClientRect();
+        panZoomInstance.zoomAtPointBy(zoomFactor, {
+          x: e.clientX - rect.left,
+          y: e.clientY - rect.top
+        });
+      }, { passive: false });
+
+      // SOPORTE TÁCTIL (PINCH-TO-ZOOM EN CELULAR)
+      let lastTouchDist = 0;
+      container.addEventListener('touchstart', (e) => {
+        if (e.touches.length === 2) {
+          lastTouchDist = Math.hypot(
+            e.touches[1].clientX - e.touches[0].clientX,
+            e.touches[1].clientY - e.touches[0].clientY
+          );
+        }
+      }, { passive: true });
+
+      container.addEventListener('touchmove', (e) => {
+        if (e.touches.length === 2 && panZoomInstance) {
+          e.preventDefault();
+          const dist = Math.hypot(
+            e.touches[1].clientX - e.touches[0].clientX,
+            e.touches[1].clientY - e.touches[0].clientY
+          );
+          if (lastTouchDist > 10) {
+            const rect = container.getBoundingClientRect();
+            const midX = ((e.touches[0].clientX + e.touches[1].clientX) / 2) - rect.left;
+            const midY = ((e.touches[0].clientY + e.touches[1].clientY) / 2) - rect.top;
+            panZoomInstance.zoomAtPointBy(dist / lastTouchDist, { x: midX, y: midY });
+          }
+          lastTouchDist = dist;
+        }
+      }, { passive: false });
+
+      document.getElementById('btnZoomIn').addEventListener('click', () => panZoomInstance.zoomBy(1.18));
+      document.getElementById('btnZoomOut').addEventListener('click', () => panZoomInstance.zoomBy(0.84));
       document.getElementById('btnFit').addEventListener('click', () => {
         panZoomInstance.resize();
         panZoomInstance.fit();
         panZoomInstance.center();
       });
       document.getElementById('btnReset').addEventListener('click', () => {
+        filterPhysicalLayer('ALL');
         panZoomInstance.reset();
         panZoomInstance.fit();
         panZoomInstance.center();

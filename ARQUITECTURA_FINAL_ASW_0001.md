@@ -304,7 +304,7 @@ stateDiagram-v2
 
 ## 6. Análisis de Concurrencia y Paralelismo en `ASW-0001` (Pestaña Translúcida del Visor)
 
-El volumen de concurrencia de usuarios en **Innofarma** es **BAJO / ACOTADO** (**máximo 2 a 3 sesiones activas simultáneas**: `Cajera Local 1` en red LAN, `Cajera Local 2` vía túnel WireGuard VPN y `Administradora/Q.F.` remota o local, con una tasa $\ll 1\text{ petición/segundo}$). Declarar explícitamente esta carga acotada justifica por qué un **Monolito Modular con PostgreSQL 16 local** es técnicamente superior y más económico que una arquitectura de microservicios para Botica Marifarma.
+El volumen de concurrencia de usuarios en **Innofarma** es **BAJO / ACOTADO** (**máximo 2 a 3 sesiones activas simultáneas**: `Cajera Local 1` en red LAN, `Cajera Local 2` vía túnel WireGuard VPN y `Administradora/Q.F.` remota o local, con una tasa $\ll 1\text{ petición/segundo}$). *Nota de arquitectura:* La operación se dimensiona sobre un único proceso de monolito modular local respaldado por PostgreSQL 16 en `PC 1`.
 
 Sin embargo, **baja concurrencia de usuarios no equivale a cero riesgo de concurrencia de datos**. La arquitectura controla los **6 escenarios reales de paralelismo y concurrencia**:
 
