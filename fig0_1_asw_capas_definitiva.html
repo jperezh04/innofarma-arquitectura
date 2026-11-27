@@ -198,6 +198,167 @@
     margin-top: 2px;
   }
 
+  /* PESTAÑA PEQUEÑA TRANSLÚCIDA DE CONCURRENCIA Y PARALELISMO */
+  .conc-floating-wrap {
+    position: fixed;
+    top: 56px;
+    left: 14px;
+    z-index: 280;
+    max-width: calc(100vw - 28px);
+  }
+  .conc-tab-btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    padding: 6px 12px;
+    background: rgba(255, 255, 255, 0.84);
+    backdrop-filter: blur(10px);
+    -webkit-backdrop-filter: blur(10px);
+    border: 2px solid rgba(15, 23, 42, 0.92);
+    box-shadow: 3px 3px 0px rgba(15, 23, 42, 0.78);
+    font-family: 'Inter', sans-serif;
+    font-size: 11px;
+    font-weight: 800;
+    color: #0f172a;
+    cursor: pointer;
+    transition: all 0.15s ease;
+  }
+  .conc-tab-btn:hover {
+    background: rgba(236, 253, 245, 0.94);
+    transform: translateY(-1px);
+  }
+  .conc-dot {
+    width: 10px;
+    height: 10px;
+    border-radius: 50%;
+    background: #10b981;
+    border: 1.5px solid #065f46;
+    box-shadow: 0 0 0 2px rgba(16, 185, 129, 0.25);
+    flex-shrink: 0;
+  }
+  .conc-glass-panel {
+    display: none;
+    margin-top: 6px;
+    width: 345px;
+    max-width: calc(100vw - 28px);
+    max-height: calc(100vh - 110px);
+    overflow-y: auto;
+    background: rgba(255, 255, 255, 0.86);
+    backdrop-filter: blur(12px);
+    -webkit-backdrop-filter: blur(12px);
+    border: 2px solid rgba(15, 23, 42, 0.94);
+    box-shadow: 6px 6px 0px rgba(15, 23, 42, 0.82);
+  }
+  .conc-glass-panel.open {
+    display: block;
+  }
+  .conc-panel-head {
+    background: rgba(15, 23, 42, 0.93);
+    color: #ffffff;
+    padding: 8px 12px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    font-size: 11px;
+    font-weight: 900;
+    letter-spacing: 0.3px;
+    text-transform: uppercase;
+  }
+  .conc-panel-body {
+    padding: 10px 11px;
+  }
+  .conc-meter-box {
+    background: rgba(236, 253, 245, 0.84);
+    border: 1.5px solid #059669;
+    padding: 8px 10px;
+    margin-bottom: 8px;
+  }
+  .conc-meter-title {
+    font-size: 11px;
+    font-weight: 900;
+    color: #065f46;
+    text-transform: uppercase;
+  }
+  .conc-meter-sub {
+    font-size: 10px;
+    font-weight: 600;
+    color: #1e293b;
+    margin: 2px 0 6px 0;
+  }
+  .conc-gauge-row {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 5px;
+  }
+  .conc-gauge-seg {
+    text-align: center;
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 9px;
+    font-weight: 800;
+    padding: 3px 4px;
+    border: 1.5px solid #94a3b8;
+    background: rgba(226, 232, 240, 0.72);
+    color: #64748b;
+  }
+  .conc-gauge-seg.active-low {
+    background: #10b981;
+    border-color: #065f46;
+    color: #ffffff;
+  }
+  .conc-card {
+    background: rgba(248, 250, 252, 0.84);
+    border: 1.5px solid #cbd5e1;
+    border-left: 4px solid #0d9488;
+    padding: 6px 9px;
+    margin-bottom: 6px;
+    cursor: pointer;
+    transition: all 0.14s ease;
+  }
+  .conc-card:hover {
+    background: rgba(254, 252, 232, 0.94);
+    border-color: #0f172a;
+    transform: translateX(2px);
+  }
+  .conc-card.active-sem {
+    background: rgba(254, 240, 138, 0.92);
+    border-color: #0f172a;
+    box-shadow: 2px 2px 0 #0f172a;
+  }
+  .conc-card-head {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 6px;
+    margin-bottom: 3px;
+  }
+  .conc-card-title {
+    font-size: 10.5px;
+    font-weight: 900;
+    color: #0f172a;
+  }
+  .conc-card-badge {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 8.5px;
+    font-weight: 800;
+    padding: 1.5px 5px;
+    border: 1px solid currentColor;
+    background: rgba(255, 255, 255, 0.9);
+    white-space: nowrap;
+  }
+  .conc-card-desc {
+    font-size: 10px;
+    line-height: 1.32;
+    color: #334155;
+    font-weight: 500;
+  }
+  .conc-tip {
+    font-size: 9.8px;
+    font-weight: 800;
+    color: #1d4ed8;
+    text-align: center;
+    padding-top: 3px;
+  }
+
   /* LIENZO PAN & ZOOM (HASTA EL BORDE INFERIOR, SIN BARRA INFERIOR) */
   #viewport {
     position: fixed;
@@ -207,10 +368,35 @@
     right: 0;
     overflow: hidden;
     cursor: grab;
+    touch-action: none;
     background-image: radial-gradient(#cbd5e1 1.2px, transparent 1.2px);
     background-size: 24px 24px;
   }
   #viewport.panning { cursor: grabbing; }
+
+  @media (max-width: 768px) {
+    .topbar {
+      padding: 0 8px;
+      gap: 5px;
+    }
+    .brand-title {
+      display: none;
+    }
+    .sem-popover {
+      left: 10px;
+      right: 10px;
+      width: auto;
+    }
+    .conc-floating-wrap {
+      top: 52px;
+      left: 8px;
+      right: 8px;
+    }
+    .conc-glass-panel {
+      width: 100%;
+      max-height: calc(100vh - 108px);
+    }
+  }
 
   #canvas {
     position: absolute;
@@ -677,6 +863,85 @@
     <div><b>Decisiones Bajo Revisión (R1 a R6):</b> Puntos abiertos en validación final con el cliente y ajuste puntual del Catálogo de Requisitos.</div>
   </div>
 </aside>
+
+<!-- PESTAÑA PEQUEÑA TRANSLÚCIDA DE CONCURRENCIA Y PARALELISMO -->
+<div class="conc-floating-wrap" id="concWrap">
+  <button class="conc-tab-btn" id="concTabBtn" onclick="toggleConcPanel(event)">
+    <span class="conc-dot"></span>
+    <span>⚡ Concurrencia y Paralelismo: <b>BAJA (2–3 ses.)</b></span>
+    <span id="concChevron">▾</span>
+  </button>
+  <div class="conc-glass-panel" id="concPanel">
+    <div class="conc-panel-head">
+      <span>⚡ Nivel de Concurrencia y Paralelismo</span>
+      <div style="display:flex;gap:6px;align-items:center;">
+        <button onclick="applySemanticFilter('ALL')" style="background:#10b981;color:#fff;border:none;padding:2px 6px;font-size:9.5px;font-weight:800;cursor:pointer;">Ver Todo</button>
+        <button onclick="toggleConcPanel(event)" style="background:none;border:none;color:#cbd5e1;font-size:13px;font-weight:900;cursor:pointer;">✕</button>
+      </div>
+    </div>
+    <div class="conc-panel-body">
+      <div class="conc-meter-box">
+        <div class="conc-meter-title">Carga Concurrente: Baja / Acotada</div>
+        <div class="conc-meter-sub">Máx. 2 a 3 sesiones activas simultáneas (2 Cajeras + 1 Admin) · &lt; 1 req/s</div>
+        <div class="conc-gauge-row">
+          <div class="conc-gauge-seg active-low">BAJA (Actual)</div>
+          <div class="conc-gauge-seg">MEDIA</div>
+          <div class="conc-gauge-seg">ALTA</div>
+        </div>
+      </div>
+
+      <div class="conc-card sem-item" data-sem="CONC_1" style="border-left-color:#0d9488;" onclick="applySemanticFilter('CONC_1')">
+        <div class="conc-card-head">
+          <span class="conc-card-title">1. Volumen de Usuarios (Capas 1 y 2)</span>
+          <span class="conc-card-badge" style="color:#0f766e;">2–3 SESIONES</span>
+        </div>
+        <div class="conc-card-desc">• Solo 2 Cajeras (Local 1 LAN + Local 2 VPN) y 1 Admin remota.<br/>• Justifica el <b>Monolito Modular</b> sin sobreingeniería de microservicios.</div>
+      </div>
+
+      <div class="conc-card sem-item" data-sem="CONC_2" style="border-left-color:#059669;" onclick="applySemanticFilter('CONC_2')">
+        <div class="conc-card-head">
+          <span class="conc-card-title">2. Ventas Local 1 vs. Local 2 (95%)</span>
+          <span class="conc-card-badge" style="color:#047857;">PARALELO PURO</span>
+        </div>
+        <div class="conc-card-desc">• Stock (<code>lotes_producto</code>) y cajas separados por <code>id_local</code>.<br/>• Tocan filas distintas y corren en paralelo real sin bloquearse.</div>
+      </div>
+
+      <div class="conc-card sem-item" data-sem="CONC_3" style="border-left-color:#dc2626;" onclick="applySemanticFilter('CONC_3')">
+        <div class="conc-card-head">
+          <span class="conc-card-title">3. Colisión Mismo Lote o Doble Clic</span>
+          <span class="conc-card-badge" style="color:#b91c1c;">LOCK + UUID</span>
+        </div>
+        <div class="conc-card-desc">• Si Cajera y Admin tocan el <b>mismo lote</b> (<code>MRI-ESP-0003</code>) o hay doble clic (<code>T-016</code>), <code>SELECT FOR UPDATE</code> serializa la fila (&lt;15 ms) + <code>UUID v4</code>.</div>
+      </div>
+
+      <div class="conc-card sem-item" data-sem="CONC_4" style="border-left-color:#d97706;" onclick="applySemanticFilter('CONC_4')">
+        <div class="conc-card-head">
+          <span class="conc-card-title">4. Reportes Admin mientras Venden</span>
+          <span class="conc-card-badge" style="color:#b45309;">MVCC PARALELO</span>
+        </div>
+        <div class="conc-card-desc">• Consultas de reportes (<code>EDU-0010</code>) y <code>pg_dump</code> usan instantáneas <b>MVCC</b> en PostgreSQL 16: nunca frenan las ventas.</div>
+      </div>
+
+      <div class="conc-card sem-item" data-sem="CONC_5" style="border-left-color:#2563eb;" onclick="applySemanticFilter('CONC_5')">
+        <div class="conc-card-head">
+          <span class="conc-card-title">5. Reconciliación Offline Local 2</span>
+          <span class="conc-card-badge" style="color:#1d4ed8;">ASYNC FIFO</span>
+        </div>
+        <div class="conc-card-desc">• Al volver la WAN, la cola <code>IndexedDB</code> (<code>C1-OFFLINE</code>) sincroniza en 2do plano sin detener la atención en mostrador.</div>
+      </div>
+
+      <div class="conc-card sem-item" data-sem="CONC_6" style="border-left-color:#475569;" onclick="applySemanticFilter('CONC_6')">
+        <div class="conc-card-head">
+          <span class="conc-card-title">6. Hilos de CPU en Servidor PC1</span>
+          <span class="conc-card-badge" style="color:#334155;">4C / 8 HILOS</span>
+        </div>
+        <div class="conc-card-desc">• <b>Core i3-12100 (8GB RAM):</b> ejecuta Caja 1 (1er plano) + PostgreSQL/Web/VPN (2do plano) y backup a la 01:00 a.m. (concurrencia cero).</div>
+      </div>
+
+      <div class="conc-tip">💡 Haz clic en cualquier punto para iluminar sus módulos y flujos</div>
+    </div>
+  </div>
+</div>
 
 <!-- LIENZO PAN & ZOOM -->
 <div id="viewport">
@@ -1450,7 +1715,16 @@
     document.getElementById('semPopover').classList.toggle('open');
   }
 
-  // MAPA DE CATEGORÍAS SEMÁNTICAS A MÓDULOS Y FLECHAS RELACIONADAS
+  function toggleConcPanel(ev) {
+    if (ev) ev.stopPropagation();
+    const panel = document.getElementById('concPanel');
+    const chev = document.getElementById('concChevron');
+    const isOpen = panel.classList.toggle('open');
+    if (chev) chev.textContent = isOpen ? '▴' : '▾';
+  }
+  window.toggleConcPanel = toggleConcPanel;
+
+  // MAPA DE CATEGORÍAS SEMÁNTICAS Y DE CONCURRENCIA A MÓDULOS Y FLECHAS RELACIONADAS
   const SEMANTIC_MAP = {
     REL_INTRA: {
       cards: ['C3-CAT', 'C3-COM', 'C3-INV', 'C3-VEN', 'C3-CAJ', 'C3-REP'],
@@ -1491,6 +1765,30 @@
     STATE_REV: {
       cards: ['C1-POS2', 'C1-OFF', 'C2-VPN', 'C3-CAT', 'C3-VEN', 'C3-REP', 'C5-BAK'],
       relIds: [2, 4, 10, 12, 13, 15, 23]
+    },
+    CONC_1: {
+      cards: ['C1-POS1', 'C1-POS2', 'C1-ADM', 'C2-VPN', 'C2-GW', 'C2-RBAC'],
+      relIds: [1, 2, 3, 5, 6]
+    },
+    CONC_2: {
+      cards: ['C1-POS1', 'C1-POS2', 'C3-VEN', 'C3-INV', 'C3-CAJ', 'C4-PG'],
+      relIds: [1, 2, 13, 14, 18]
+    },
+    CONC_3: {
+      cards: ['C1-POS1', 'C1-ADM', 'C2-GW', 'C3-VEN', 'C3-INV', 'C4-PG'],
+      relIds: [1, 3, 13, 18]
+    },
+    CONC_4: {
+      cards: ['C1-ADM', 'C3-REP', 'C3-VEN', 'C4-PG', 'C4-IDX', 'C5-BAK'],
+      relIds: [3, 15, 16, 18, 20, 23]
+    },
+    CONC_5: {
+      cards: ['C1-POS2', 'C1-OFF', 'C2-VPN', 'C2-GW', 'C2-AUD', 'C4-IDB', 'C4-PG'],
+      relIds: [2, 4, 5, 18]
+    },
+    CONC_6: {
+      cards: ['C5-SRV', 'C5-CLI', 'C5-UPS', 'C5-BAK', 'C4-PG', 'C1-POS1'],
+      relIds: [21, 22, 23, 24]
     }
   };
 
@@ -1514,6 +1812,8 @@
     if (e.data && e.data.type === 'SEMANTIC_FILTER') {
       activeSemanticCategory = ''; // force apply
       applySemanticFilter(e.data.category || 'ALL');
+    } else if (e.data && e.data.type === 'TOGGLE_CONCURRENCY') {
+      toggleConcPanel();
     }
   });
 
@@ -1827,8 +2127,25 @@
 
   viewport.addEventListener('wheel', (e) => {
     e.preventDefault();
-    const zoomFactor = e.deltaY < 0 ? 1.1 : 0.9;
-    const newScale = Math.min(Math.max(scale * zoomFactor, 0.32), 2.0);
+    let dy = e.deltaY;
+    let dx = e.deltaX;
+    if (e.deltaMode === 1) { dy *= 16; dx *= 16; }
+    else if (e.deltaMode === 2) { dy *= 100; dx *= 100; }
+
+    // Si es deslizamiento horizontal de 2 dedos en touchpad (sin Ctrl), desplaza el lienzo suavemente
+    if (!e.ctrlKey && Math.abs(dx) > Math.abs(dy) * 1.35 && Math.abs(dx) > 2) {
+      panX -= dx * 0.85;
+      panY -= dy * 0.85;
+      updateTransform();
+      return;
+    }
+
+    // Zoom exponencial suave calibrado para touchpad de laptop (pellizco o 2 dedos) y rueda de mouse
+    const clampedDy = Math.max(-110, Math.min(110, dy));
+    const sensitivity = e.ctrlKey ? 0.0075 : (Math.abs(dy) < 45 ? 0.0024 : 0.0012);
+    const zoomFactor = Math.exp(-clampedDy * sensitivity);
+    const newScale = Math.min(Math.max(scale * zoomFactor, 0.22), 2.1);
+
     const rect = viewport.getBoundingClientRect();
     const mouseX = e.clientX - rect.left;
     const mouseY = e.clientY - rect.top;
@@ -1838,6 +2155,69 @@
     scale = newScale;
     updateTransform();
   }, { passive: false });
+
+  // SOPORTE TÁCTIL COMPLETO PARA CELULAR Y TABLET (1 DEDO PAN, 2 DEDOS PINCH-TO-ZOOM)
+  let touchMode = null;
+  let touchStartX = 0, touchStartY = 0;
+  let lastPinchDist = 0;
+  let lastPinchMidX = 0, lastPinchMidY = 0;
+
+  function getTouchDist(t1, t2) {
+    return Math.hypot(t2.clientX - t1.clientX, t2.clientY - t1.clientY);
+  }
+
+  viewport.addEventListener('touchstart', (e) => {
+    if (e.target.closest('button, select, input, .conc-floating-wrap, .sem-popover')) return;
+    if (e.touches.length === 1) {
+      touchMode = 'pan';
+      touchStartX = e.touches[0].clientX - panX;
+      touchStartY = e.touches[0].clientY - panY;
+    } else if (e.touches.length === 2) {
+      touchMode = 'pinch';
+      lastPinchDist = getTouchDist(e.touches[0], e.touches[1]);
+      const rect = viewport.getBoundingClientRect();
+      lastPinchMidX = ((e.touches[0].clientX + e.touches[1].clientX) / 2) - rect.left;
+      lastPinchMidY = ((e.touches[0].clientY + e.touches[1].clientY) / 2) - rect.top;
+    }
+  }, { passive: true });
+
+  viewport.addEventListener('touchmove', (e) => {
+    if (!touchMode) return;
+    e.preventDefault();
+    if (touchMode === 'pan' && e.touches.length === 1) {
+      panX = e.touches[0].clientX - touchStartX;
+      panY = e.touches[0].clientY - touchStartY;
+      updateTransform();
+    } else if (e.touches.length === 2) {
+      touchMode = 'pinch';
+      const dist = getTouchDist(e.touches[0], e.touches[1]);
+      const rect = viewport.getBoundingClientRect();
+      const midX = ((e.touches[0].clientX + e.touches[1].clientX) / 2) - rect.left;
+      const midY = ((e.touches[0].clientY + e.touches[1].clientY) / 2) - rect.top;
+
+      if (lastPinchDist > 10) {
+        const ratio = dist / lastPinchDist;
+        const newScale = Math.min(Math.max(scale * ratio, 0.22), 2.1);
+        panX = midX - (midX - panX) * (newScale / scale) + (midX - lastPinchMidX);
+        panY = midY - (midY - panY) * (newScale / scale) + (midY - lastPinchMidY);
+        scale = newScale;
+        updateTransform();
+      }
+      lastPinchDist = dist;
+      lastPinchMidX = midX;
+      lastPinchMidY = midY;
+    }
+  }, { passive: false });
+
+  viewport.addEventListener('touchend', (e) => {
+    if (e.touches.length === 0) {
+      touchMode = null;
+    } else if (e.touches.length === 1) {
+      touchMode = 'pan';
+      touchStartX = e.touches[0].clientX - panX;
+      touchStartY = e.touches[0].clientY - panY;
+    }
+  });
 
   function applyFilters(redraw = true) {
     const ver = document.getElementById('versionSelect').value;
@@ -1879,6 +2259,12 @@
 
   window.addEventListener('resize', () => drawAllRelations());
   window.addEventListener('load', () => {
+    if (window.innerWidth <= 768) {
+      const vw = viewport.clientWidth || window.innerWidth;
+      scale = Math.max(0.24, Math.min(0.48, (vw - 16) / 2360));
+      panX = Math.max(6, (vw - 2360 * scale) / 2);
+      panY = 44;
+    }
     updateTransform();
     setTimeout(drawAllRelations, 80);
   });

@@ -94,10 +94,105 @@
       height: 100vh;
       overflow: hidden;
       cursor: grab;
+      touch-action: none;
       position: relative;
       background-color: #ffffff;
       background-image: radial-gradient(#cbd5e1 0.85px, transparent 0.85px);
       background-size: 22px 22px;
+    }
+
+    /* PESTAÑA PEQUEÑA TRANSLÚCIDA DE CONCURRENCIA Y PARALELISMO */
+    .conc-floating-wrap {
+      position: fixed;
+      top: 56px;
+      left: 14px;
+      z-index: 280;
+      max-width: calc(100vw - 28px);
+    }
+    .conc-tab-btn {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      padding: 6px 12px;
+      background: rgba(255, 255, 255, 0.84);
+      backdrop-filter: blur(10px);
+      -webkit-backdrop-filter: blur(10px);
+      border: 2px solid rgba(15, 23, 42, 0.92);
+      box-shadow: 3px 3px 0px rgba(15, 23, 42, 0.78);
+      font-size: 11px;
+      font-weight: 800;
+      color: #0f172a;
+      cursor: pointer;
+    }
+    .conc-dot {
+      width: 10px;
+      height: 10px;
+      border-radius: 50%;
+      background: #10b981;
+      border: 1.5px solid #065f46;
+      flex-shrink: 0;
+    }
+    .conc-glass-panel {
+      display: none;
+      margin-top: 6px;
+      width: 345px;
+      max-width: calc(100vw - 28px);
+      max-height: calc(100vh - 110px);
+      overflow-y: auto;
+      background: rgba(255, 255, 255, 0.86);
+      backdrop-filter: blur(12px);
+      -webkit-backdrop-filter: blur(12px);
+      border: 2px solid rgba(15, 23, 42, 0.94);
+      box-shadow: 6px 6px 0px rgba(15, 23, 42, 0.82);
+    }
+    .conc-glass-panel.open { display: block; }
+    .conc-panel-head {
+      background: rgba(15, 23, 42, 0.93);
+      color: #ffffff;
+      padding: 8px 12px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      font-size: 11px;
+      font-weight: 900;
+      text-transform: uppercase;
+    }
+    .conc-panel-body { padding: 10px 11px; }
+    .conc-meter-box {
+      background: rgba(236, 253, 245, 0.84);
+      border: 1.5px solid #059669;
+      padding: 8px 10px;
+      margin-bottom: 8px;
+    }
+    .conc-meter-title { font-size: 11px; font-weight: 900; color: #065f46; text-transform: uppercase; }
+    .conc-meter-sub { font-size: 10px; font-weight: 600; color: #1e293b; margin: 2px 0 6px 0; }
+    .conc-gauge-row { display: grid; grid-template-columns: repeat(3, 1fr); gap: 5px; }
+    .conc-gauge-seg {
+      text-align: center;
+      font-size: 9px;
+      font-weight: 800;
+      padding: 3px 4px;
+      border: 1.5px solid #94a3b8;
+      background: rgba(226, 232, 240, 0.72);
+      color: #64748b;
+    }
+    .conc-gauge-seg.active-low { background: #10b981; border-color: #065f46; color: #ffffff; }
+    .conc-card {
+      background: rgba(248, 250, 252, 0.84);
+      border: 1.5px solid #cbd5e1;
+      border-left: 4px solid #0d9488;
+      padding: 6px 9px;
+      margin-bottom: 6px;
+      cursor: pointer;
+    }
+    .conc-card-head { display: flex; align-items: center; justify-content: space-between; gap: 6px; margin-bottom: 3px; }
+    .conc-card-title { font-size: 10.5px; font-weight: 900; color: #0f172a; }
+    .conc-card-badge { font-size: 8.5px; font-weight: 800; padding: 1.5px 5px; border: 1px solid currentColor; background: rgba(255,255,255,0.9); }
+    .conc-card-desc { font-size: 10px; line-height: 1.32; color: #334155; }
+    @media (max-width: 768px) {
+      .hud-lod-indicator { display: none; }
+      .conc-floating-wrap { top: 50px; left: 8px; right: 8px; }
+      .conc-glass-panel { width: 100%; }
     }
 
     #viewport.grabbing { cursor: grabbing; }
@@ -225,6 +320,43 @@
       <button class="hud-btn" id="btnFit">Ajustar</button>
     </div>
   </header>
+
+  <!-- PESTAÑA PEQUEÑA TRANSLÚCIDA DE CONCURRENCIA Y PARALELISMO -->
+  <div class="conc-floating-wrap" id="concWrap">
+    <button class="conc-tab-btn" id="concTabBtn" onclick="toggleConcPanel(event)">
+      <span class="conc-dot"></span>
+      <span>⚡ Concurrencia y Paralelismo: <b>BAJA (2–3 ses.)</b></span>
+      <span id="concChevron">▾</span>
+    </button>
+    <div class="conc-glass-panel" id="concPanel">
+      <div class="conc-panel-head">
+        <span>⚡ Nivel de Concurrencia y Paralelismo</span>
+        <div style="display:flex;gap:6px;align-items:center;">
+          <button onclick="applySemanticFilter('ALL')" style="background:#10b981;color:#fff;border:none;padding:2px 6px;font-size:9.5px;font-weight:800;cursor:pointer;">Ver Todo</button>
+          <button onclick="toggleConcPanel(event)" style="background:none;border:none;color:#cbd5e1;font-size:13px;font-weight:900;cursor:pointer;">✕</button>
+        </div>
+      </div>
+      <div class="conc-panel-body">
+        <div class="conc-meter-box">
+          <div class="conc-meter-title">Carga Concurrente: Baja / Acotada</div>
+          <div class="conc-meter-sub">Máx. 2 a 3 sesiones activas simultáneas (2 Cajeras + 1 Admin) · &lt; 1 req/s</div>
+          <div class="conc-gauge-row">
+            <div class="conc-gauge-seg active-low">BAJA (Actual)</div>
+            <div class="conc-gauge-seg">MEDIA</div>
+            <div class="conc-gauge-seg">ALTA</div>
+          </div>
+        </div>
+        <div class="conc-card" style="border-left-color:#0d9488;" onclick="applySemanticFilter('DOM_UI')">
+          <div class="conc-card-head"><span class="conc-card-title">1. Volumen de Actores (Nivel 0)</span><span class="conc-card-badge" style="color:#0f766e;">2–3 SESIONES</span></div>
+          <div class="conc-card-desc">• Cajera Local 1 (LAN) + Cajera Local 2 (VPN) + Administradora.<br/>• Justifica el Monolito Modular sin microservicios.</div>
+        </div>
+        <div class="conc-card" style="border-left-color:#dc2626;" onclick="applySemanticFilter('DOM_DATA')">
+          <div class="conc-card-head"><span class="conc-card-title">2. Estado 4 de Venta (Lock ACID)</span><span class="conc-card-badge" style="color:#b91c1c;">LOCK + UUID</span></div>
+          <div class="conc-card-desc">• En <code>DES-0001</code>, el Estado 2 bloquea doble clic (<code>T-016</code>) y el Estado 4 aplica <code>SELECT FOR UPDATE</code> (&lt;15 ms).</div>
+        </div>
+      </div>
+    </div>
+  </div>
 
   <div id="viewport">
     <div id="canvas">
@@ -721,9 +853,19 @@
       });
     };
 
+    window.toggleConcPanel = function(ev) {
+      if (ev) ev.stopPropagation();
+      const panel = document.getElementById('concPanel');
+      const chev = document.getElementById('concChevron');
+      const isOpen = panel.classList.toggle('open');
+      if (chev) chev.textContent = isOpen ? '▴' : '▾';
+    };
+
     window.addEventListener('message', (ev) => {
-      if (ev.data && ev.data.type === 'APPLY_SEMANTIC_FILTER') {
+      if (ev.data && (ev.data.type === 'APPLY_SEMANTIC_FILTER' || ev.data.type === 'SEMANTIC_FILTER')) {
         window.applySemanticFilter(ev.data.category);
+      } else if (ev.data && ev.data.type === 'TOGGLE_CONCURRENCY') {
+        window.toggleConcPanel();
       }
     });
 
@@ -761,8 +903,22 @@
 
     viewport.addEventListener('wheel', (e) => {
       e.preventDefault();
-      const factor = e.deltaY < 0 ? 1.12 : 0.89;
-      const newScale = Math.min(2.3, Math.max(0.35, scale * factor));
+      let dy = e.deltaY;
+      let dx = e.deltaX;
+      if (e.deltaMode === 1) { dy *= 16; dx *= 16; }
+      else if (e.deltaMode === 2) { dy *= 100; dx *= 100; }
+
+      if (!e.ctrlKey && Math.abs(dx) > Math.abs(dy) * 1.35 && Math.abs(dx) > 2) {
+        panX -= dx * 0.85;
+        panY -= dy * 0.85;
+        updateTransform();
+        return;
+      }
+
+      const clampedDy = Math.max(-110, Math.min(110, dy));
+      const sensitivity = e.ctrlKey ? 0.0075 : (Math.abs(dy) < 45 ? 0.0024 : 0.0012);
+      const factor = Math.exp(-clampedDy * sensitivity);
+      const newScale = Math.min(2.3, Math.max(0.22, scale * factor));
       const rect = viewport.getBoundingClientRect();
       const mx = e.clientX - rect.left;
       const my = e.clientY - rect.top;
@@ -772,6 +928,70 @@
       manualLOD = null;
       updateTransform();
     }, { passive: false });
+
+    // SOPORTE TÁCTIL COMPLETO PARA CELULAR Y TABLET (1 DEDO PAN, 2 DEDOS PINCH-TO-ZOOM)
+    let touchMode = null;
+    let tStartX = 0, tStartY = 0;
+    let lastPinchDist = 0;
+    let lastPinchMidX = 0, lastPinchMidY = 0;
+
+    function getTouchDist(t1, t2) {
+      return Math.hypot(t2.clientX - t1.clientX, t2.clientY - t1.clientY);
+    }
+
+    viewport.addEventListener('touchstart', (e) => {
+      if (e.target.closest('.hud-bar, .conc-floating-wrap')) return;
+      if (e.touches.length === 1) {
+        touchMode = 'pan';
+        tStartX = e.touches[0].clientX - panX;
+        tStartY = e.touches[0].clientY - panY;
+      } else if (e.touches.length === 2) {
+        touchMode = 'pinch';
+        lastPinchDist = getTouchDist(e.touches[0], e.touches[1]);
+        const rect = viewport.getBoundingClientRect();
+        lastPinchMidX = ((e.touches[0].clientX + e.touches[1].clientX) / 2) - rect.left;
+        lastPinchMidY = ((e.touches[0].clientY + e.touches[1].clientY) / 2) - rect.top;
+      }
+    }, { passive: true });
+
+    viewport.addEventListener('touchmove', (e) => {
+      if (!touchMode) return;
+      e.preventDefault();
+      if (touchMode === 'pan' && e.touches.length === 1) {
+        panX = e.touches[0].clientX - tStartX;
+        panY = e.touches[0].clientY - tStartY;
+        updateTransform();
+      } else if (e.touches.length === 2) {
+        touchMode = 'pinch';
+        const dist = getTouchDist(e.touches[0], e.touches[1]);
+        const rect = viewport.getBoundingClientRect();
+        const midX = ((e.touches[0].clientX + e.touches[1].clientX) / 2) - rect.left;
+        const midY = ((e.touches[0].clientY + e.touches[1].clientY) / 2) - rect.top;
+
+        if (lastPinchDist > 10) {
+          const ratio = dist / lastPinchDist;
+          const newScale = Math.min(2.3, Math.max(0.22, scale * ratio));
+          panX = midX - (midX - panX) * (newScale / scale) + (midX - lastPinchMidX);
+          panY = midY - (midY - panY) * (newScale / scale) + (midY - lastPinchMidY);
+          scale = newScale;
+          manualLOD = null;
+          updateTransform();
+        }
+        lastPinchDist = dist;
+        lastPinchMidX = midX;
+        lastPinchMidY = midY;
+      }
+    }, { passive: false });
+
+    viewport.addEventListener('touchend', (e) => {
+      if (e.touches.length === 0) {
+        touchMode = null;
+      } else if (e.touches.length === 1) {
+        touchMode = 'pan';
+        tStartX = e.touches[0].clientX - panX;
+        tStartY = e.touches[0].clientY - panY;
+      }
+    });
 
     viewport.addEventListener('mousedown', (e) => {
       if (e.target.closest('.hud-bar')) return;

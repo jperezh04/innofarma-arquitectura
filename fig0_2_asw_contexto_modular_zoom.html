@@ -448,6 +448,134 @@
   }
   .sem-box { width: 16px; height: 16px; flex-shrink: 0; margin-top: 2px; }
   .sem-line { width: 22px; height: 16px; flex-shrink: 0; display: flex; align-items: center; margin-top: 2px; }
+
+  /* PESTAÑA PEQUEÑA TRANSLÚCIDA DE CONCURRENCIA Y PARALELISMO */
+  .conc-floating-wrap {
+    position: fixed;
+    top: 56px;
+    left: 14px;
+    z-index: 280;
+    max-width: calc(100vw - 28px);
+  }
+  .conc-tab-btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    padding: 6px 12px;
+    background: rgba(255, 255, 255, 0.84);
+    backdrop-filter: blur(10px);
+    -webkit-backdrop-filter: blur(10px);
+    border: 2px solid rgba(15, 23, 42, 0.92);
+    box-shadow: 3px 3px 0px rgba(15, 23, 42, 0.78);
+    font-family: 'Inter', sans-serif;
+    font-size: 11px;
+    font-weight: 800;
+    color: #0f172a;
+    cursor: pointer;
+    transition: all 0.15s ease;
+  }
+  .conc-tab-btn:hover {
+    background: rgba(236, 253, 245, 0.94);
+    transform: translateY(-1px);
+  }
+  .conc-dot {
+    width: 10px;
+    height: 10px;
+    border-radius: 50%;
+    background: #10b981;
+    border: 1.5px solid #065f46;
+    box-shadow: 0 0 0 2px rgba(16, 185, 129, 0.25);
+    flex-shrink: 0;
+  }
+  .conc-glass-panel {
+    display: none;
+    margin-top: 6px;
+    width: 345px;
+    max-width: calc(100vw - 28px);
+    max-height: calc(100vh - 110px);
+    overflow-y: auto;
+    background: rgba(255, 255, 255, 0.86);
+    backdrop-filter: blur(12px);
+    -webkit-backdrop-filter: blur(12px);
+    border: 2px solid rgba(15, 23, 42, 0.94);
+    box-shadow: 6px 6px 0px rgba(15, 23, 42, 0.82);
+  }
+  .conc-glass-panel.open { display: block; }
+  .conc-panel-head {
+    background: rgba(15, 23, 42, 0.93);
+    color: #ffffff;
+    padding: 8px 12px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    font-size: 11px;
+    font-weight: 900;
+    letter-spacing: 0.3px;
+    text-transform: uppercase;
+  }
+  .conc-panel-body { padding: 10px 11px; }
+  .conc-meter-box {
+    background: rgba(236, 253, 245, 0.84);
+    border: 1.5px solid #059669;
+    padding: 8px 10px;
+    margin-bottom: 8px;
+  }
+  .conc-meter-title { font-size: 11px; font-weight: 900; color: #065f46; text-transform: uppercase; }
+  .conc-meter-sub { font-size: 10px; font-weight: 600; color: #1e293b; margin: 2px 0 6px 0; }
+  .conc-gauge-row { display: grid; grid-template-columns: repeat(3, 1fr); gap: 5px; }
+  .conc-gauge-seg {
+    text-align: center;
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 9px;
+    font-weight: 800;
+    padding: 3px 4px;
+    border: 1.5px solid #94a3b8;
+    background: rgba(226, 232, 240, 0.72);
+    color: #64748b;
+  }
+  .conc-gauge-seg.active-low { background: #10b981; border-color: #065f46; color: #ffffff; }
+  .conc-card {
+    background: rgba(248, 250, 252, 0.84);
+    border: 1.5px solid #cbd5e1;
+    border-left: 4px solid #0d9488;
+    padding: 6px 9px;
+    margin-bottom: 6px;
+    cursor: pointer;
+    transition: all 0.14s ease;
+  }
+  .conc-card:hover {
+    background: rgba(254, 252, 232, 0.94);
+    border-color: #0f172a;
+    transform: translateX(2px);
+  }
+  .conc-card.active-sem {
+    background: rgba(254, 240, 138, 0.92);
+    border-color: #0f172a;
+    box-shadow: 2px 2px 0 #0f172a;
+  }
+  .conc-card-head { display: flex; align-items: center; justify-content: space-between; gap: 6px; margin-bottom: 3px; }
+  .conc-card-title { font-size: 10.5px; font-weight: 900; color: #0f172a; }
+  .conc-card-badge {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 8.5px;
+    font-weight: 800;
+    padding: 1.5px 5px;
+    border: 1px solid currentColor;
+    background: rgba(255, 255, 255, 0.9);
+    white-space: nowrap;
+  }
+  .conc-card-desc { font-size: 10px; line-height: 1.32; color: #334155; font-weight: 500; }
+  .conc-tip { font-size: 9.8px; font-weight: 800; color: #1d4ed8; text-align: center; padding-top: 3px; }
+
+  #viewport { touch-action: none; }
+
+  @media (max-width: 768px) {
+    .topbar { padding: 0 8px; gap: 5px; }
+    .title-main { display: none; }
+    .sem-popover { left: 10px; right: 10px; width: auto; }
+    .conc-floating-wrap { top: 52px; left: 8px; right: 8px; }
+    .conc-glass-panel { width: 100%; max-height: calc(100vh - 108px); }
+  }
 </style>
 </head>
 <body>
@@ -527,6 +655,85 @@
     <div><b>Decisiones Bajo Revisión (R1 a R6):</b> Módulos con parámetros abiertos en validación final con el cliente.</div>
   </div>
 </aside>
+
+<!-- PESTAÑA PEQUEÑA TRANSLÚCIDA DE CONCURRENCIA Y PARALELISMO -->
+<div class="conc-floating-wrap" id="concWrap">
+  <button class="conc-tab-btn" id="concTabBtn" onclick="toggleConcPanel(event)">
+    <span class="conc-dot"></span>
+    <span>⚡ Concurrencia y Paralelismo: <b>BAJA (2–3 ses.)</b></span>
+    <span id="concChevron">▾</span>
+  </button>
+  <div class="conc-glass-panel" id="concPanel">
+    <div class="conc-panel-head">
+      <span>⚡ Nivel de Concurrencia y Paralelismo</span>
+      <div style="display:flex;gap:6px;align-items:center;">
+        <button onclick="applySemanticFilter('ALL')" style="background:#10b981;color:#fff;border:none;padding:2px 6px;font-size:9.5px;font-weight:800;cursor:pointer;">Ver Todo</button>
+        <button onclick="toggleConcPanel(event)" style="background:none;border:none;color:#cbd5e1;font-size:13px;font-weight:900;cursor:pointer;">✕</button>
+      </div>
+    </div>
+    <div class="conc-panel-body">
+      <div class="conc-meter-box">
+        <div class="conc-meter-title">Carga Concurrente: Baja / Acotada</div>
+        <div class="conc-meter-sub">Máx. 2 a 3 sesiones activas simultáneas (2 Cajeras + 1 Admin) · &lt; 1 req/s</div>
+        <div class="conc-gauge-row">
+          <div class="conc-gauge-seg active-low">BAJA (Actual)</div>
+          <div class="conc-gauge-seg">MEDIA</div>
+          <div class="conc-gauge-seg">ALTA</div>
+        </div>
+      </div>
+
+      <div class="conc-card sem-item" data-sem="CONC_1" style="border-left-color:#0d9488;" onclick="applySemanticFilter('CONC_1')">
+        <div class="conc-card-head">
+          <span class="conc-card-title">1. Volumen de Usuarios (Actores)</span>
+          <span class="conc-card-badge" style="color:#0f766e;">2–3 SESIONES</span>
+        </div>
+        <div class="conc-card-desc">• Solo 2 Cajeras (Local 1 LAN + Local 2 VPN) y 1 Admin remota.<br/>• Justifica el <b>Monolito Modular</b> sin microservicios.</div>
+      </div>
+
+      <div class="conc-card sem-item" data-sem="CONC_2" style="border-left-color:#059669;" onclick="applySemanticFilter('CONC_2')">
+        <div class="conc-card-head">
+          <span class="conc-card-title">2. Ventas Local 1 vs. Local 2 (95%)</span>
+          <span class="conc-card-badge" style="color:#047857;">PARALELO PURO</span>
+        </div>
+        <div class="conc-card-desc">• Stock (<code>EDU-0002</code>) y Caja (<code>EDU-0011</code>) separados por <code>id_local</code>.<br/>• Tocan filas distintas y operan en paralelo sin bloquearse.</div>
+      </div>
+
+      <div class="conc-card sem-item" data-sem="CONC_3" style="border-left-color:#dc2626;" onclick="applySemanticFilter('CONC_3')">
+        <div class="conc-card-head">
+          <span class="conc-card-title">3. Colisión Mismo Lote o Doble Clic</span>
+          <span class="conc-card-badge" style="color:#b91c1c;">LOCK + UUID</span>
+        </div>
+        <div class="conc-card-desc">• Si Cajera (<code>EDU-0004</code>) y Admin tocan el <b>mismo lote</b> (<code>EDU-0002</code>) o hay doble clic, <code>SELECT FOR UPDATE</code> serializa la fila (&lt;15 ms).</div>
+      </div>
+
+      <div class="conc-card sem-item" data-sem="CONC_4" style="border-left-color:#d97706;" onclick="applySemanticFilter('CONC_4')">
+        <div class="conc-card-head">
+          <span class="conc-card-title">4. Reportes Admin mientras Venden</span>
+          <span class="conc-card-badge" style="color:#b45309;">MVCC PARALELO</span>
+        </div>
+        <div class="conc-card-desc">• Consultas de Reportes (<code>EDU-0010</code>) y POE (<code>EDU-0012</code>) leen instantáneas <b>MVCC</b> en PostgreSQL 16 sin frenar las ventas.</div>
+      </div>
+
+      <div class="conc-card sem-item" data-sem="CONC_5" style="border-left-color:#2563eb;" onclick="applySemanticFilter('CONC_5')">
+        <div class="conc-card-head">
+          <span class="conc-card-title">5. Reconciliación Offline Local 2</span>
+          <span class="conc-card-badge" style="color:#1d4ed8;">ASYNC FIFO</span>
+        </div>
+        <div class="conc-card-desc">• Al volver la WAN, la cola <code>IndexedDB</code> en <code>MOD-UI</code> sincroniza ventas en 2do plano con <code>UUID v4</code>.</div>
+      </div>
+
+      <div class="conc-card sem-item" data-sem="CONC_6" style="border-left-color:#475569;" onclick="applySemanticFilter('CONC_6')">
+        <div class="conc-card-head">
+          <span class="conc-card-title">6. Hilos de CPU en Servidor PC1</span>
+          <span class="conc-card-badge" style="color:#334155;">4C / 8 HILOS</span>
+        </div>
+        <div class="conc-card-desc">• <b>Core i3-12100 (8GB RAM):</b> ejecuta Caja 1 (1er plano) + PostgreSQL/Web/VPN (2do plano) y backup a la 01:00 a.m.</div>
+      </div>
+
+      <div class="conc-tip">💡 Haz clic en cualquier punto para iluminar sus módulos y flujos</div>
+    </div>
+  </div>
+</div>
 
 <div id="viewport">
   <div id="canvas" class="lod-skeleton">
@@ -970,6 +1177,15 @@
     document.getElementById('semPopover').classList.toggle('open');
   }
 
+  function toggleConcPanel(ev) {
+    if (ev) ev.stopPropagation();
+    const panel = document.getElementById('concPanel');
+    const chev = document.getElementById('concChevron');
+    const isOpen = panel.classList.toggle('open');
+    if (chev) chev.textContent = isOpen ? '▴' : '▾';
+  }
+  window.toggleConcPanel = toggleConcPanel;
+
   const SEMANTIC_RULES_N2 = {
     REL_INTRA: {
       nodes: ['EDU-0008', 'EDU-0005', 'EDU-0007', 'EDU-0009', 'EDU-0004', 'EDU-0002', 'EDU-0011', 'EDU-0013'],
@@ -1003,6 +1219,24 @@
     },
     STATE_REV: {
       nodes: ['MOD-UI', 'EDU-0008', 'EDU-0004', 'EDU-0012', 'MOD-BAK']
+    },
+    CONC_1: {
+      nodes: ['ACT-CAJ1', 'ACT-CAJ2', 'ACT-ADMIN', 'MOD-UI', 'EDU-0006']
+    },
+    CONC_2: {
+      nodes: ['ACT-CAJ1', 'ACT-CAJ2', 'MOD-UI', 'EDU-0004', 'EDU-0002', 'EDU-0011', 'MOD-DB']
+    },
+    CONC_3: {
+      nodes: ['ACT-CAJ1', 'ACT-ADMIN', 'EDU-0004', 'EDU-0002', 'MOD-ACID', 'MOD-DB']
+    },
+    CONC_4: {
+      nodes: ['ACT-ADMIN', 'EDU-0010', 'EDU-0012', 'EDU-0004', 'MOD-DB', 'MOD-BAK']
+    },
+    CONC_5: {
+      nodes: ['ACT-CAJ2', 'MOD-UI', 'EDU-0004', 'MOD-ACID', 'MOD-DB']
+    },
+    CONC_6: {
+      nodes: ['ACT-CAJ1', 'MOD-DB', 'MOD-BAK', 'MOD-HW']
     }
   };
 
@@ -1022,6 +1256,8 @@
     if (e.data && e.data.type === 'SEMANTIC_FILTER') {
       activeSemanticCat = '';
       applySemanticFilter(e.data.category || 'ALL');
+    } else if (e.data && e.data.type === 'TOGGLE_CONCURRENCY') {
+      toggleConcPanel();
     }
   });
 
@@ -1317,8 +1553,23 @@
   });
   viewport.addEventListener('wheel', e => {
     e.preventDefault();
-    const factor = e.deltaY < 0 ? 1.1 : 0.9;
-    const next = Math.min(Math.max(scale * factor, 0.32), 2.0);
+    let dy = e.deltaY;
+    let dx = e.deltaX;
+    if (e.deltaMode === 1) { dy *= 16; dx *= 16; }
+    else if (e.deltaMode === 2) { dy *= 100; dx *= 100; }
+
+    if (!e.ctrlKey && Math.abs(dx) > Math.abs(dy) * 1.35 && Math.abs(dx) > 2) {
+      panX -= dx * 0.85;
+      panY -= dy * 0.85;
+      syncTransform();
+      return;
+    }
+
+    const clampedDy = Math.max(-110, Math.min(110, dy));
+    const sensitivity = e.ctrlKey ? 0.0075 : (Math.abs(dy) < 45 ? 0.0024 : 0.0012);
+    const factor = Math.exp(-clampedDy * sensitivity);
+    const next = Math.min(Math.max(scale * factor, 0.22), 2.1);
+
     const rect = viewport.getBoundingClientRect();
     const mx = e.clientX - rect.left;
     const my = e.clientY - rect.top;
@@ -1328,8 +1579,77 @@
     syncTransform();
   }, { passive: false });
 
+  // SOPORTE TÁCTIL COMPLETO PARA CELULAR Y TABLET (1 DEDO PAN, 2 DEDOS PINCH-TO-ZOOM)
+  let touchMode = null;
+  let tStartX = 0, tStartY = 0;
+  let lastPinchDist = 0;
+  let lastPinchMidX = 0, lastPinchMidY = 0;
+
+  function getTouchDist(t1, t2) {
+    return Math.hypot(t2.clientX - t1.clientX, t2.clientY - t1.clientY);
+  }
+
+  viewport.addEventListener('touchstart', (e) => {
+    if (e.target.closest('button, select, input, .conc-floating-wrap, .sem-popover')) return;
+    if (e.touches.length === 1) {
+      touchMode = 'pan';
+      tStartX = e.touches[0].clientX - panX;
+      tStartY = e.touches[0].clientY - panY;
+    } else if (e.touches.length === 2) {
+      touchMode = 'pinch';
+      lastPinchDist = getTouchDist(e.touches[0], e.touches[1]);
+      const rect = viewport.getBoundingClientRect();
+      lastPinchMidX = ((e.touches[0].clientX + e.touches[1].clientX) / 2) - rect.left;
+      lastPinchMidY = ((e.touches[0].clientY + e.touches[1].clientY) / 2) - rect.top;
+    }
+  }, { passive: true });
+
+  viewport.addEventListener('touchmove', (e) => {
+    if (!touchMode) return;
+    e.preventDefault();
+    if (touchMode === 'pan' && e.touches.length === 1) {
+      panX = e.touches[0].clientX - tStartX;
+      panY = e.touches[0].clientY - tStartY;
+      syncTransform();
+    } else if (e.touches.length === 2) {
+      touchMode = 'pinch';
+      const dist = getTouchDist(e.touches[0], e.touches[1]);
+      const rect = viewport.getBoundingClientRect();
+      const midX = ((e.touches[0].clientX + e.touches[1].clientX) / 2) - rect.left;
+      const midY = ((e.touches[0].clientY + e.touches[1].clientY) / 2) - rect.top;
+
+      if (lastPinchDist > 10) {
+        const ratio = dist / lastPinchDist;
+        const next = Math.min(Math.max(scale * ratio, 0.22), 2.1);
+        panX = midX - (midX - panX) * (next / scale) + (midX - lastPinchMidX);
+        panY = midY - (midY - panY) * (next / scale) + (midY - lastPinchMidY);
+        scale = next;
+        syncTransform();
+      }
+      lastPinchDist = dist;
+      lastPinchMidX = midX;
+      lastPinchMidY = midY;
+    }
+  }, { passive: false });
+
+  viewport.addEventListener('touchend', (e) => {
+    if (e.touches.length === 0) {
+      touchMode = null;
+    } else if (e.touches.length === 1) {
+      touchMode = 'pan';
+      tStartX = e.touches[0].clientX - panX;
+      tStartY = e.touches[0].clientY - panY;
+    }
+  });
+
   window.addEventListener('resize', () => renderEdges());
   window.addEventListener('load', () => {
+    if (window.innerWidth <= 768) {
+      const vw = viewport.clientWidth || window.innerWidth;
+      scale = Math.max(0.24, Math.min(0.48, (vw - 16) / 2240));
+      panX = Math.max(6, (vw - 2240 * scale) / 2);
+      panY = 44;
+    }
     syncTransform();
     setTimeout(renderEdges, 80);
   });

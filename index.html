@@ -754,7 +754,46 @@
         top: 0;
         left: 0;
         bottom: 0;
-        box-shadow: 6px 0 24px rgba(15, 23, 42, 0.22);
+        z-index: 1200;
+        max-width: 86vw;
+        box-shadow: 6px 0 24px rgba(15, 23, 42, 0.28);
+      }
+      .top-bar {
+        padding: 0 8px;
+        gap: 6px;
+      }
+      .top-bar h2 {
+        font-size: 11.5px;
+      }
+      .top-bar-badge {
+        display: none;
+      }
+      .btn-top, .btn-toggle-sidebar {
+        padding: 5px 8px;
+        font-size: 11px;
+      }
+      .hide-mobile {
+        display: none;
+      }
+      .palette-popover {
+        left: 10px;
+        right: 10px;
+        width: auto;
+        max-height: calc(100vh - 70px);
+      }
+    }
+
+    .sidebar-backdrop {
+      display: none;
+      position: fixed;
+      inset: 0;
+      background: rgba(15, 23, 42, 0.42);
+      backdrop-filter: blur(2px);
+      z-index: 1100;
+    }
+    @media (max-width: 900px) {
+      body:not(.sidebar-collapsed) .sidebar-backdrop {
+        display: block;
       }
     }
   </style>
@@ -1083,18 +1122,22 @@
     </footer>
   </aside>
 
+  <!-- FONDO TÁCTIL PARA CERRAR MENÚ EN MÓVIL -->
+  <div class="sidebar-backdrop" onclick="toggleSidebar()"></div>
+
   <!-- ÁREA PRINCIPAL -->
   <main id="main-content">
     <header class="top-bar">
       <div class="top-bar-left">
-        <button class="btn-toggle-sidebar" onclick="toggleSidebar()" title="Mostrar / ocultar panel lateral (Tecla M)">☰ Menú (M)</button>
+        <button class="btn-toggle-sidebar" onclick="toggleSidebar()" title="Mostrar / ocultar panel lateral (Tecla M)">☰ Menú</button>
         <span class="top-bar-badge" id="top-badge" style="background:#0f172a;">ARQ. FINAL ASW-0001</span>
         <h2 id="top-title">ASW-0001-N1 (V01.00): Arquitectura en 5 Capas con RF, RNF, Fortalezas, Riesgos MRI y Zoom Semántico</h2>
       </div>
       <div class="top-bar-actions">
+        <button class="btn-top" id="btnConcTop" onclick="triggerChildConcurrency()" title="Abrir pestaña translúcida de Concurrencia y Paralelismo" style="background:#ecfdf5;border-color:#059669;color:#065f46;">⚡ Concurrencia</button>
         <button class="btn-top" id="btnPalette" onclick="togglePalettePopover()">🎨 Semántica</button>
-        <button class="btn-top" onclick="openDiagramInNewTab()">↗ Nueva Pestaña</button>
-        <button class="btn-top" id="btnCopyLink" onclick="copyCurrentUrl()">Copiar Enlace</button>
+        <button class="btn-top" onclick="openDiagramInNewTab()">↗ <span class="hide-mobile">Nueva Pestaña</span></button>
+        <button class="btn-top hide-mobile" id="btnCopyLink" onclick="copyCurrentUrl()">Copiar Enlace</button>
       </div>
     </header>
 
@@ -1223,6 +1266,27 @@
       try {
         history.replaceState(null, '', '#' + path);
       } catch (e) {}
+
+      if (window.innerWidth <= 900) {
+        document.body.classList.add('sidebar-collapsed');
+      }
+    }
+
+    function triggerChildConcurrency() {
+      const iframe = document.getElementById('diagram-viewer');
+      try {
+        if (iframe && iframe.contentWindow) {
+          if (typeof iframe.contentWindow.toggleConcPanel === 'function') {
+            iframe.contentWindow.toggleConcPanel();
+          } else {
+            iframe.contentWindow.postMessage({ type: 'TOGGLE_CONCURRENCY' }, '*');
+          }
+        }
+      } catch (err) {
+        if (iframe && iframe.contentWindow) {
+          iframe.contentWindow.postMessage({ type: 'TOGGLE_CONCURRENCY' }, '*');
+        }
+      }
     }
 
     function toggleFolder(folderId) {
@@ -1355,6 +1419,9 @@
     window.toggleSidebar = toggleSidebar;
 
     window.addEventListener('DOMContentLoaded', () => {
+      if (window.innerWidth <= 900) {
+        document.body.classList.add('sidebar-collapsed');
+      }
       const hash = window.location.hash.replace('#', '');
       if (hash && hash.endsWith('.html')) {
         const item = document.querySelector(`.menu-item[onclick*="${hash}"]`);
