@@ -122,21 +122,18 @@
       align-items: center;
       gap: 7px;
       padding: 6px 11px;
-      background: rgba(255, 255, 255, 0.86);
-      backdrop-filter: blur(10px);
-      -webkit-backdrop-filter: blur(10px);
+      background: rgba(255, 255, 255, 0.92);
       border: 2px solid rgba(15, 23, 42, 0.94);
       box-shadow: 3px 3px 0px rgba(15, 23, 42, 0.8);
       font-size: 11px;
       font-weight: 800;
       color: #0f172a;
       cursor: pointer;
-      transition: all 0.14s ease;
+      transition: background 0.14s ease;
     }
 
     .conc-tab-btn:hover {
-      background: rgba(236, 253, 245, 0.95);
-      transform: translateY(-1px);
+      background: rgba(236, 253, 245, 0.97);
     }
 
     .conc-dot {
@@ -153,9 +150,7 @@
       display: flex;
       flex-wrap: wrap;
       gap: 4px;
-      background: rgba(255, 255, 255, 0.84);
-      backdrop-filter: blur(10px);
-      -webkit-backdrop-filter: blur(10px);
+      background: rgba(255, 255, 255, 0.92);
       border: 2px solid rgba(15, 23, 42, 0.92);
       box-shadow: 3px 3px 0px rgba(15, 23, 42, 0.78);
       padding: 5px 7px;
@@ -172,11 +167,11 @@
       background: #ffffff;
       color: #0f172a;
       cursor: pointer;
-      transition: all 0.12s ease;
+      transition: background 0.12s ease;
     }
 
     .layer-filter-pill:hover {
-      transform: translateY(-1px);
+      background: #f1f5f9;
     }
 
     .layer-filter-pill.active {
@@ -198,11 +193,10 @@
       max-width: calc(100vw - 28px);
       max-height: calc(100vh - 135px);
       overflow-y: auto;
-      background: rgba(255, 255, 255, 0.88);
-      backdrop-filter: blur(12px);
-      -webkit-backdrop-filter: blur(12px);
+      background: rgba(255, 255, 255, 0.93);
       border: 2px solid rgba(15, 23, 42, 0.94);
       box-shadow: 6px 6px 0px rgba(15, 23, 42, 0.82);
+      cursor: default;
     }
 
     .conc-glass-panel.open {
@@ -307,12 +301,12 @@
       background: radial-gradient(#cbd5e1 1.1px, transparent 1.1px);
       background-size: 24px 24px;
       background-color: #f8fafc;
-      cursor: grab;
+      cursor: default;
       touch-action: none;
     }
 
     #container:active {
-      cursor: grabbing;
+      cursor: move;
     }
 
     #mermaid-target {
@@ -481,7 +475,7 @@
       <div class="conc-panel-body">
         <div class="conc-meter-box">
           <div class="conc-meter-title">Carga Concurrente: Baja / Acotada (2–3 Sesiones)</div>
-          <div class="conc-meter-sub">• <i>Nota del arquitecto:</i> Flujo dimensionado sobre proceso monolítico modular local (&lt; 1 req/s).</div>
+          <div class="conc-meter-sub">• <i>Anotación:</i> Flujo dimensionado sobre proceso monolítico modular local (&lt; 1 req/s).</div>
         </div>
         <div class="conc-card" style="border-left-color:#059669;" onclick="filterPhysicalLayer('DOM_UI')">
           <div class="conc-card-head"><span class="conc-card-title">1. Paralelismo entre Puestos Caja 1 y Caja 2</span><span class="conc-card-badge" style="color:#047857;">PARALELO PURO</span></div>

@@ -93,7 +93,7 @@
       width: 100vw;
       height: 100vh;
       overflow: hidden;
-      cursor: grab;
+      cursor: default;
       touch-action: none;
       position: relative;
       background-color: #ffffff;
@@ -114,9 +114,7 @@
       align-items: center;
       gap: 8px;
       padding: 6px 12px;
-      background: rgba(255, 255, 255, 0.84);
-      backdrop-filter: blur(10px);
-      -webkit-backdrop-filter: blur(10px);
+      background: rgba(255, 255, 255, 0.92);
       border: 2px solid rgba(15, 23, 42, 0.92);
       box-shadow: 3px 3px 0px rgba(15, 23, 42, 0.78);
       font-size: 11px;
@@ -134,16 +132,15 @@
     }
     .conc-glass-panel {
       display: none;
-      margin-top: 6px;
+      margin-top: 2px;
       width: 345px;
       max-width: calc(100vw - 28px);
       max-height: calc(100vh - 110px);
       overflow-y: auto;
-      background: rgba(255, 255, 255, 0.86);
-      backdrop-filter: blur(12px);
-      -webkit-backdrop-filter: blur(12px);
+      background: rgba(255, 255, 255, 0.93);
       border: 2px solid rgba(15, 23, 42, 0.94);
       box-shadow: 6px 6px 0px rgba(15, 23, 42, 0.82);
+      cursor: default;
     }
     .conc-glass-panel.open { display: block; }
     .conc-panel-head {
@@ -348,7 +345,7 @@
         </div>
         <div class="conc-card" style="border-left-color:#0d9488;" onclick="applySemanticFilter('DOM_UI')">
           <div class="conc-card-head"><span class="conc-card-title">1. Volumen de Actores (Nivel 0)</span><span class="conc-card-badge" style="color:#0f766e;">2–3 SESIONES</span></div>
-          <div class="conc-card-desc">• Cajera Local 1 (LAN) + Cajera Local 2 (VPN) + Administradora.<br/>• <i>Nota del arquitecto:</i> Flujo dimensionado sobre proceso monolítico modular local (&lt; 1 req/s).</div>
+          <div class="conc-card-desc">• Cajera Local 1 (LAN) + Cajera Local 2 (VPN) + Administradora.<br/>• <i>Anotación:</i> Flujo dimensionado sobre proceso monolítico modular local (&lt; 1 req/s).</div>
         </div>
         <div class="conc-card" style="border-left-color:#dc2626;" onclick="applySemanticFilter('DOM_DATA')">
           <div class="conc-card-head"><span class="conc-card-title">2. Estado 4 de Venta (Lock ACID)</span><span class="conc-card-badge" style="color:#b91c1c;">LOCK + UUID</span></div>

@@ -462,9 +462,7 @@
     align-items: center;
     gap: 8px;
     padding: 6px 12px;
-    background: rgba(255, 255, 255, 0.84);
-    backdrop-filter: blur(10px);
-    -webkit-backdrop-filter: blur(10px);
+    background: rgba(255, 255, 255, 0.92);
     border: 2px solid rgba(15, 23, 42, 0.92);
     box-shadow: 3px 3px 0px rgba(15, 23, 42, 0.78);
     font-family: 'Inter', sans-serif;
@@ -472,11 +470,10 @@
     font-weight: 800;
     color: #0f172a;
     cursor: pointer;
-    transition: all 0.15s ease;
+    transition: background 0.15s ease;
   }
   .conc-tab-btn:hover {
-    background: rgba(236, 253, 245, 0.94);
-    transform: translateY(-1px);
+    background: rgba(236, 253, 245, 0.97);
   }
   .conc-dot {
     width: 10px;
@@ -489,16 +486,15 @@
   }
   .conc-glass-panel {
     display: none;
-    margin-top: 6px;
+    margin-top: 2px;
     width: 345px;
     max-width: calc(100vw - 28px);
     max-height: calc(100vh - 110px);
     overflow-y: auto;
-    background: rgba(255, 255, 255, 0.86);
-    backdrop-filter: blur(12px);
-    -webkit-backdrop-filter: blur(12px);
+    background: rgba(255, 255, 255, 0.93);
     border: 2px solid rgba(15, 23, 42, 0.94);
     box-shadow: 6px 6px 0px rgba(15, 23, 42, 0.82);
+    cursor: default;
   }
   .conc-glass-panel.open { display: block; }
   .conc-panel-head {
@@ -567,7 +563,8 @@
   .conc-card-desc { font-size: 10px; line-height: 1.32; color: #334155; font-weight: 500; }
   .conc-tip { font-size: 9.8px; font-weight: 800; color: #1d4ed8; text-align: center; padding-top: 3px; }
 
-  #viewport { touch-action: none; }
+  #viewport { touch-action: none; cursor: default !important; }
+  #viewport.panning { cursor: move !important; }
 
   @media (max-width: 768px) {
     .topbar { padding: 0 8px; gap: 5px; }
@@ -687,7 +684,7 @@
           <span class="conc-card-title">1. Volumen de Usuarios (Actores)</span>
           <span class="conc-card-badge" style="color:#0f766e;">2–3 SESIONES</span>
         </div>
-        <div class="conc-card-desc">• Solo 2 Cajeras (Local 1 LAN + Local 2 VPN) y 1 Admin remota.<br/>• <i>Nota del arquitecto:</i> Flujo dimensionado sobre proceso monolítico modular local (&lt; 1 req/s).</div>
+        <div class="conc-card-desc">• Solo 2 Cajeras (Local 1 LAN + Local 2 VPN) y 1 Admin remota.<br/>• <i>Anotación:</i> Flujo dimensionado sobre proceso monolítico modular local (&lt; 1 req/s).</div>
       </div>
 
       <div class="conc-card sem-item" data-sem="CONC_2" style="border-left-color:#059669;" onclick="applySemanticFilter('CONC_2')">
@@ -1472,19 +1469,21 @@
 
   document.querySelectorAll('.mod-node, .actor-box').forEach(node => {
     node.addEventListener('mouseenter', () => {
-      if (!selectedId) {
+      if (!selectedId && activeSemanticCat === 'ALL') {
         hoveredId = node.id;
         applyFocusState();
       }
     });
     node.addEventListener('mouseleave', () => {
-      if (!selectedId) {
+      if (!selectedId && activeSemanticCat === 'ALL') {
         hoveredId = null;
         applyFocusState();
       }
     });
     node.addEventListener('click', (ev) => {
       ev.stopPropagation();
+      activeSemanticCat = 'ALL';
+      document.querySelectorAll('.sem-item').forEach(el => el.classList.remove('active-sem'));
       selectedId = (selectedId === node.id) ? null : node.id;
       applyFocusState();
     });
